@@ -5,6 +5,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text>Edited on web then edited on vscode</Text>
+      <Text>New line inserted</Text>
       <StatusBar style="auto" />
     </View>
   );
