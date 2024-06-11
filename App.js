@@ -8,6 +8,7 @@ import CameraScreen from './CameraScreen';
 import MoreScreen from './MoreScreen';
 import AddShoeScreen from './AddShoeScreen';
 
+
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 

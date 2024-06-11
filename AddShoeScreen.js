@@ -37,6 +37,8 @@ export default function AddShoeScreen({ navigation }) {
     });
   };
 
+
+  
   const handleSubmit = async () => {
     try {
       await firestore().collection('shoes').add(shoe);
