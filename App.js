@@ -1,123 +1,51 @@
-/*import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import * as React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
+import Icon from 'react-native-vector-icons/Ionicons';
+import HomeScreen from './HomeScreen';
+import CameraScreen from './CameraScreen';
+import MoreScreen from './MoreScreen';
+import AddShoeScreen from './AddShoeScreen';
 
-export default function App() {
+const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
+function CameraStack() {
   return (
-    <View style={styles.container}>
-      <Text>Edited on web then edited on vscode</Text>
-      <Text>New line inserted</Text>
-      <StatusBar style="auto" />
-    </View>
+    <Stack.Navigator>
+      <Stack.Screen name="Camera" component={CameraScreen} />
+      <Stack.Screen name="AddShoe" component={AddShoeScreen} />
+    </Stack.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
-*/
-
-import React, { useState } from 'react';
-import { Button, StyleSheet, TextInput, View } from 'react-native';
-import { firestore, storage } from './firebaseConfig';
-
 export default function App() {
-  const [shoe, setShoe] = useState({
-    price: '',
-    name: '',
-    code: '',
-    dateRegistered: '',
-    dateSold: '',
-    imageUrl: '',
-    soldPrice: '',
-  });
-
-  const handleInputChange = (name, value) => {
-    setShoe({ ...shoe, [name]: value });
-  };
-
-  const handleSubmit = async () => {
-    try {
-      await firestore().collection('shoes').add(shoe);
-      console.log('Shoe added!');
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleImageUpload = async (uri) => {
-    const reference = storage().ref(`/shoes/${new Date().getTime()}.jpg`);
-    await reference.putFile(uri);
-    const imageUrl = await reference.getDownloadURL();
-    handleInputChange('imageUrl', imageUrl);
-  };
-
   return (
-
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Зургийн линк"
-        value={shoe.imageUrl}
-        onChangeText={(text) => handleInputChange('imageUrl', text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Гутлын үнэ"
-        value={shoe.price}
-        onChangeText={(text) => handleInputChange('price', text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Нэр"
-        value={shoe.name}
-        onChangeText={(text) => handleInputChange('name', text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Гутлын код"
-        value={shoe.code}
-        onChangeText={(text) => handleInputChange('code', text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Бүртгэгдсэн огноо"
-        value={shoe.dateRegistered}
-        onChangeText={(text) => handleInputChange('dateRegistered', text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Зарагдсан огноо"
-        value={shoe.dateSold}
-        onChangeText={(text) => handleInputChange('dateSold', text)}
-      />
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Зарагдсан үнэ"
-        value={shoe.soldPrice}
-        onChangeText={(text) => handleInputChange('soldPrice', text)}
-      />
-      <Button title="Нэмэх" onPress={handleSubmit} />
-    </View>
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ color, size }) => {
+            let iconName;
+            if (route.name === 'Home') {
+              iconName = 'grid-outline';
+            } else if (route.name === 'Camera') {
+              iconName = 'camera-outline';
+            } else if (route.name === 'More') {
+              iconName = 'ellipsis-horizontal-outline';
+            }
+            return <Icon name={iconName} size={size} color={color} />;
+          },
+        })}
+        tabBarOptions={{
+          activeTintColor: 'tomato',
+          inactiveTintColor: 'gray',
+        }}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Camera" component={CameraStack} />
+        <Tab.Screen name="More" component={MoreScreen} />
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 16,
-  },
-  input: {
-    height: 50,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 12,
-    paddingLeft: 8,
-  },
-});
