@@ -6,7 +6,7 @@ import HomeScreen from './screens/HomeScreen';
 import AddShoeScreen from './screens/AddShoeScreen';
 import ViewShoesScreen from './screens/ViewShoesScreen';
 import BottomNav from './components/BottomNav';
-
+//Өөрчлөлт оруулав
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
