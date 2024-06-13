@@ -23,6 +23,7 @@ if (!firebase.apps.length) {
   firebase.app(); // if already initialized, use that one
 }
 
+export { firebase }
 // Initialize Firestore
 
 
