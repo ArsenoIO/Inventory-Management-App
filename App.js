@@ -5,27 +5,54 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from './screens/HomeScreen';
 import AddShoeScreen from './screens/AddShoeScreen';
 import ViewShoesScreen from './screens/ViewShoesScreen';
-import BottomNav from './components/BottomNav';
-//Өөрчлөлт оруулав
+import AccountScreen from './screens/AccountScreen'; // Import the new AccountScreen
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Ensure this import
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function HomeStack() {
+function MainTabs() {
   return (
-    <Stack.Navigator initialRouteName="Home">
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
-      <Stack.Screen name="AddShoe" component={AddShoeScreen} options={{ title: 'Add Shoe' }} />
-    </Stack.Navigator>
+    <Tab.Navigator>
+       <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Icon name="home" color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="Add Shoe"
+        component={AddShoeScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Icon name="plus-box" color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="View Shoes"
+        component={ViewShoesScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Icon name="shoe-formal" color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="Account"
+        component={AccountScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Icon name="account" color={color} size={size} />,
+        }}
+      />
+    </Tab.Navigator>
   );
 }
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Tab.Navigator tabBar={props => <BottomNav {...props} />}>
-        <Tab.Screen name="HomeStack" component={HomeStack} options={{ headerShown: false }} />
-        <Tab.Screen name="ViewShoes" component={ViewShoesScreen} options={{ title: 'View Shoes' }} />
-      </Tab.Navigator>
+      <Stack.Navigator>
+        <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
+        <Stack.Screen name="Add Shoe" component={AddShoeScreen} />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
