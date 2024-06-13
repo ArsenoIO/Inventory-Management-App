@@ -1,22 +1,20 @@
-import * as React from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import Icon from 'react-native-vector-icons/Ionicons';
-import HomeScreen from './HomeScreen';
-import CameraScreen from './CameraScreen';
-import MoreScreen from './MoreScreen';
-import AddShoeScreen from './AddShoeScreen';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import HomeScreen from './screens/HomeScreen';
+import AddShoeScreen from './screens/AddShoeScreen';
+import ViewShoesScreen from './screens/ViewShoesScreen';
+import BottomNav from './components/BottomNav';
 
-
-const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
 
-function CameraStack() {
+function HomeStack() {
   return (
-    <Stack.Navigator>
-      <Stack.Screen name="Camera" component={CameraScreen} />
-      <Stack.Screen name="AddShoe" component={AddShoeScreen} />
+    <Stack.Navigator initialRouteName="Home">
+      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
+      <Stack.Screen name="AddShoe" component={AddShoeScreen} options={{ title: 'Add Shoe' }} />
     </Stack.Navigator>
   );
 }
@@ -24,28 +22,9 @@ function CameraStack() {
 export default function App() {
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ color, size }) => {
-            let iconName;
-            if (route.name === 'Home') {
-              iconName = 'grid-outline';
-            } else if (route.name === 'Camera') {
-              iconName = 'camera-outline';
-            } else if (route.name === 'More') {
-              iconName = 'ellipsis-horizontal-outline';
-            }
-            return <Icon name={iconName} size={size} color={color} />;
-          },
-        })}
-        tabBarOptions={{
-          activeTintColor: 'tomato',
-          inactiveTintColor: 'gray',
-        }}
-      >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Camera" component={CameraStack} />
-        <Tab.Screen name="More" component={MoreScreen} />
+      <Tab.Navigator tabBar={props => <BottomNav {...props} />}>
+        <Tab.Screen name="HomeStack" component={HomeStack} options={{ headerShown: false }} />
+        <Tab.Screen name="ViewShoes" component={ViewShoesScreen} options={{ title: 'View Shoes' }} />
       </Tab.Navigator>
     </NavigationContainer>
   );
