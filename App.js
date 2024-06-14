@@ -15,28 +15,28 @@ function MainTabs() {
   return (
     <Tab.Navigator>
        <Tab.Screen
-        name="Home"
+        name="Хянах самбар"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <Icon name="home" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Icon name="chart-areaspline" color={color} size={size} />,
         }}
       />
       <Tab.Screen
-        name="Add Shoe"
+        name="Гутал бүртгэл"
         component={AddShoeScreen}
         options={{
           tabBarIcon: ({ color, size }) => <Icon name="plus-box" color={color} size={size} />,
         }}
       />
       <Tab.Screen
-        name="View Shoes"
+        name="Орлогын тайлан"
         component={ViewShoesScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <Icon name="shoe-formal" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Icon name="file-plus" color={color} size={size} />,
         }}
       />
       <Tab.Screen
-        name="Account"
+        name="Хэрэглэгч"
         component={AccountScreen}
         options={{
           tabBarIcon: ({ color, size }) => <Icon name="account" color={color} size={size} />,
