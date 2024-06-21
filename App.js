@@ -7,6 +7,7 @@ import AddShoeScreen from './screens/AddShoeScreen';
 import ViewShoesScreen from './screens/ViewShoesScreen';
 import AccountScreen from './screens/AccountScreen'; // Import the new AccountScreen
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Ensure this import
+import ShoesInventoryScreen from './screens/ShoesInventoryScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -30,7 +31,7 @@ function MainTabs() {
       />
       <Tab.Screen
         name="Орлогын тайлан"
-        component={ViewShoesScreen}
+        component={ShoesInventoryScreen}
         options={{
           tabBarIcon: ({ color, size }) => <Icon name="file-plus" color={color} size={size} />,
         }}
