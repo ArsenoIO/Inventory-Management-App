@@ -114,6 +114,7 @@ export default function AddShoeScreen() {
             placeholder="₮"
             value={shoe.price}
             onChangeText={(text) => handleInputChange('price', text)}
+            keyboardType="numeric"
           />
         </View>
         <View style={styles.inputRow}>

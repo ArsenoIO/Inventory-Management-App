@@ -11,7 +11,11 @@
 10.Мобайл:
 
 
-Гутлын код:
+Гутлын кодоо бичихэд гутлын сангаас шүүлт хийн "Гутлын код" "Размер" "Үндсэн үнэ" гэсэн утгуудыг автоматаар нөхөгдөх
+Хямдарсан бол хямдарсан үнийг оруулахад автоматаар төлөх дүнг гаргаж өгөх
+Алдаатай мэдээлэл орсон бол устгах боломжтой байх
+Тухайн өдрийн зарагдсан гутлын листийг цааш нь илгээх товчлууртай байх
+Алдаа шалгах шаардлагыг оруулж өгөх
 */
 
 import React, { useState } from 'react';
@@ -30,7 +34,7 @@ export default function ShoesInventoryScreen() {
 
   const handleAddShoe = () => {
     if (!shoeName || !shoePrice || !shoeColorSize) {
-      Alert.alert('Алдаа', 'Гутлын нэр, үнэ, өнгө оруулна уу!');
+      Alert.alert('Алдаа', 'Талбарыг бөглөнө үү!');
       return;
     }
 
@@ -74,6 +78,10 @@ export default function ShoesInventoryScreen() {
     setDatePickerVisibility(true);
   };
 
+  const handleUpload = () => {
+    alert('Амжилттай илгээгдлээ');
+  }
+
   const hideDatePicker = () => {
     setDatePickerVisibility(false);
   };
@@ -112,8 +120,9 @@ export default function ShoesInventoryScreen() {
       </View>
 
       <View style={styles.buttonContainer}>
-        <Button title="Нэмэх" onPress={handleAddShoe} />
-        <Button title="Цэвэрлэх" onPress={clearList} />
+        <Button color="#0066CC" title="Нэмэх" onPress={handleAddShoe} />
+        <Button color="green" title="Илгээх" onPress={handleUpload}/>
+        <Button color="#CC3300"title="Цэвэрлэх" onPress={clearList} />
       </View>
 
       <View style={styles.listContainer}>
