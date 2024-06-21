@@ -25,9 +25,3 @@ if (!firebase.apps.length) {
 
 export { firebase }
 // Initialize Firestore
-
-
-
-
-
-
