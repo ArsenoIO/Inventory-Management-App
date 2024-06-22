@@ -4,7 +4,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Picker } from '@react-native-picker/picker';
 
-export default function ShoesInventoryScreen() {
+export default function RevenueReport() {
 
   const [shoes, setShoes] = useState([]);
   const [shoeCode, setShoeCode] = useState('');
