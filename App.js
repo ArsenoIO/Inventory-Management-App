@@ -9,6 +9,7 @@ import AccountScreen from './screens/AccountScreen'; // Import the new AccountSc
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Ensure this import
 import ShoesInventoryScreen from './screens/ShoesInventoryScreen';
 
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
