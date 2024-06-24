@@ -1,3 +1,21 @@
+/*
+Асуух асуулт
+Админ болон борлуулагчийн эрхийг хэрхэн зохицуулах вэ?
+Alibaba
+Тэмдэглэсэн ерөнхий төлөвлөгөөг эргэж харах
+
+If you cant master your thought you're in trouble forever
+
+
+
+
+
+
+
+
+
+
+*/
 import React, { useState } from 'react';
 import { View, TextInput, Button, Text, StyleSheet, Image, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
@@ -105,6 +123,9 @@ export default function AddShoeScreen() {
             <Picker.Item label="RCH" value="RCH"/>
             <Picker.Item label="DGA" value="DGA"/>
             <Picker.Item label="BDJ" value="BDJ"/>
+            <Picker.Item label="BDN" value="BDN"/>
+            <Picker.Item label="JAW" value="JAW"/>
+            <Picker.Item label="NDT" value="NDT"/>
           </Picker>
         </View>
         <View style={styles.inputRow}>
