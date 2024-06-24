@@ -7,9 +7,7 @@ import AddShoeScreen from './screens/AddShoeScreen';
 import ViewShoesScreen from './screens/ViewShoesScreen';
 import AccountScreen from './screens/AccountScreen'; // Import the new AccountScreen
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Ensure this import
-import ShoesInventoryScreen from './screens/RevenueReport';
-import RevenueReport from './screens/RevenueReport';
-import RevenueReportScreen from './screens/RevenueReport';
+import RevenueReportScreen from './screens/RevenueReportScreen';
 
 
 const Stack = createStackNavigator();
