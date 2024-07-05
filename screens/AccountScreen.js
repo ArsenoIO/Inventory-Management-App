@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, Button, TouchableOpacity } from 'react-native';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import React from "react";
+import { View, Text, StyleSheet, Button, TouchableOpacity } from "react-native";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { useNavigation } from "@react-navigation/native";
 
 export default function AccountScreen() {
   const navigation = useNavigation();
@@ -9,13 +9,17 @@ export default function AccountScreen() {
   const handleLogout = () => {
     // Implement your logout logic here
     // For example, navigate to the logout screen or clear user session
-    navigation.navigate('Login'); // Navigate to login screen after logout
+    navigation.navigate("Login"); // Navigate to login screen after logout
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <MaterialCommunityIcons name="account-circle" size={150} color="#45474B" />
+        <MaterialCommunityIcons
+          name="account-circle"
+          size={150}
+          color="#45474B"
+        />
       </View>
 
       <View style={styles.infoContainer}>
@@ -52,11 +56,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    flexDirection: 'column',
-    alignItems: 'center',
+    flexDirection: "column",
+    alignItems: "center",
     marginBottom: 30,
     marginTop: 10,
   },
@@ -64,29 +68,29 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   infoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 30,
   },
   label: {
     fontSize: 18,
-    color: 'gray',
+    color: "gray",
   },
   value: {
     fontSize: 17,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#CE5A67',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#CE5A67",
     padding: 12,
     marginTop: 20,
   },
   logoutText: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
     marginLeft: 10,
   },

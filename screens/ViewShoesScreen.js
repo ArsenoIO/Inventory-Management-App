@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, StyleSheet } from "react-native";
 // Import your Firebase configuration here
 
 export default function ViewShoesScreen() {
@@ -18,8 +18,8 @@ export default function ViewShoesScreen() {
 
     // Temporary mock data
     setShoes([
-      { id: '1', name: 'Shoe 1', price: '1000₮', colorSize: 'Red/42' },
-      { id: '2', name: 'Shoe 2', price: '1500₮', colorSize: 'Blue/43' }
+      { id: "1", name: "Shoe 1", price: "1000₮", colorSize: "Red/42" },
+      { id: "2", name: "Shoe 2", price: "1500₮", colorSize: "Blue/43" },
     ]);
   }, []);
 
@@ -36,7 +36,7 @@ export default function ViewShoesScreen() {
       <FlatList
         data={shoes}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
       />
     </View>
   );
@@ -46,11 +46,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   item: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: "#ccc",
   },
 });

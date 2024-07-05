@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React from "react";
+import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 export default function BottomNav({ state, descriptors, navigation }) {
   return (
@@ -10,7 +10,7 @@ export default function BottomNav({ state, descriptors, navigation }) {
         const isFocused = state.index === index;
         const onPress = () => {
           const event = navigation.emit({
-            type: 'tabPress',
+            type: "tabPress",
             target: route.key,
             canPreventDefault: true,
           });
@@ -36,19 +36,19 @@ export default function BottomNav({ state, descriptors, navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    flexDirection: "row",
     height: 60,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: '#ddd',
+    borderTopColor: "#ddd",
   },
   tab: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   focusedTab: {
-    backgroundColor: '#ddd',
+    backgroundColor: "#ddd",
   },
   text: {
     fontSize: 16,
