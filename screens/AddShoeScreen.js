@@ -124,7 +124,6 @@ export default function AddShoeScreen() {
         </View>
 
         <View style={styles.inputRow}>
-          {" "}
           <Text style={styles.label}>Үнэ:</Text>
           <TextInput
             style={styles.input}

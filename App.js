@@ -69,3 +69,47 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+/*
+// App.js
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import SignInScreen from "./screens/SignInScreen";
+import SignUpScreen from "./screens/SignUpScreen";
+import ManagerScreen from "./screens/ManagerScreen";
+import SellerScreen from "./screens/SellerScreen";
+
+const Stack = createStackNavigator();
+const ManagerStack = createStackNavigator();
+const SellerStack = createStackNavigator();
+
+function ManagerStackScreen() {
+  return (
+    <ManagerStack.Navigator>
+      <ManagerStack.Screen name="ManagerHome" component={ManagerScreen} />
+    </ManagerStack.Navigator>
+  );
+}
+
+function SellerStackScreen() {
+  return (
+    <SellerStack.Navigator>
+      <SellerStack.Screen name="SellerHome" component={SellerScreen} />
+    </SellerStack.Navigator>
+  );
+}
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="SignIn">
+        <Stack.Screen name="SignIn" component={SignInScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+        <Stack.Screen name="ManagerStack" component={ManagerStackScreen} />
+        <Stack.Screen name="SellerStack" component={SellerStackScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+*/
