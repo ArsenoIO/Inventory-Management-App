@@ -1,8 +1,9 @@
 // SignInScreen.js
 import React, { useState } from "react";
-import { View, TextInput, Button, StyleSheet, Text } from "react-native";
-import { auth, firestore } from "../firebase";
+import { View, TextInput, Button, StyleSheet, Text, Alert } from "react-native";
+import { auth, firestore } from "../firebaseConfig";
 import { useNavigation } from "@react-navigation/native";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
@@ -11,25 +12,15 @@ export default function SignInScreen() {
 
   const handleSignIn = async () => {
     try {
-      const userCredential = await auth.signInWithEmailAndPassword(
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
         email,
         password
       );
-      const user = userCredential.user;
-
-      // Fetch user role from Firestore
-      const userDoc = await firestore.collection("users").doc(user.uid).get();
-      const userData = userDoc.data();
-
-      if (userData.role === "manager") {
-        navigation.navigate("ManagerStack");
-      } else if (userData.role === "seller") {
-        navigation.navigate("SellerStack");
-      } else {
-        alert("Unknown role!");
-      }
+      navigation.navigate("HomeScreen");
     } catch (error) {
-      alert(error.message);
+      console.log(error);
+      Alert.alert("Sign in failed :" + error.message);
     }
   };
 

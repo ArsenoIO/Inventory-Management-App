@@ -1,3 +1,4 @@
+/*
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -70,7 +71,6 @@ export default function App() {
   );
 }
 
-/*
 // App.js
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
@@ -79,6 +79,8 @@ import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import ManagerScreen from "./screens/ManagerScreen";
 import SellerScreen from "./screens/SellerScreen";
+import firebase from '@react-native-firebase/app';
+import firestore from '@react-native-firebase/firestore';
 
 const Stack = createStackNavigator();
 const ManagerStack = createStackNavigator();
@@ -113,3 +115,24 @@ export default function App() {
   );
 }
 */
+
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import SignInScreen from "./screens/SignInScreen";
+import HomeScreen from "./screens/HomeScreen"; // Import the HomeScreen
+import firebase from "@react-native-firebase/app";
+import firestore from "@react-native-firebase/firestore";
+
+const Stack = createStackNavigator();
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="SignIn">
+        <Stack.Screen name="SignIn" component={SignInScreen} />
+        <Stack.Screen name="HomeScreen" component={HomeScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}

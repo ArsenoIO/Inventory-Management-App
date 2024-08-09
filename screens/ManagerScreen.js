@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { firestore } from "../firebase";
+import { firestore } from "../firebaseConfig";
 
 export default function ManagerScreen() {
   const [finance, setFinance] = useState(1000000); // Example initial finance

@@ -15,7 +15,6 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { onValue } from "firebase/database";
 
 export default function AddShoeScreen() {
   const [shoe, setShoe] = useState({

@@ -9,7 +9,7 @@ import {
   Text,
   Alert,
 } from "react-native";
-import { firestore } from "../firebase";
+import { firestore } from "../firebaseConfig";
 
 export default function SellerScreen() {
   const [shoeName, setShoeName] = useState("");
