@@ -1,10 +1,10 @@
 import React from "react";
-import { View, Button, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 
 export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
-      <Button title="Add Shoe" onPress={() => navigation.navigate("AddShoe")} />
+      <Text>Энэ хэсэгт СТАТИСТИК мэдээллийг харуулна.</Text>
     </View>
   );
 }

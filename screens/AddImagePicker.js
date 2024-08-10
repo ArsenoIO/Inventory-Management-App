@@ -9,10 +9,11 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
+import { Platform } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { firestore, storage } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { collection, addDoc } from "firebase/firestore";
-import * as ImagePicker from "expo-image-picker";
 
 const AddShoeScreen = () => {
   const [shoeName, setShoeName] = useState("");
@@ -66,13 +67,20 @@ const AddShoeScreen = () => {
   };
 
   const handleAddShoe = async () => {
-    if (!shoeName || !shoeCode || !size || !price || !imageUri) {
+    if (
+      !shoeName ||
+      !shoeCode ||
+      !size ||
+      !price ||
+      !quantity ||
+      !selectedImage
+    ) {
       Alert.alert("Бүх мэдээллээ оруулна уу.");
       return;
     }
 
     try {
-      const response = await fetch(imageUri);
+      const response = await fetch(selectedImage);
       const blob = await response.blob();
       const storageRef = ref(storage, `shoes/${shoeCode}.jpg`);
       await uploadBytes(storageRef, blob);
@@ -94,7 +102,7 @@ const AddShoeScreen = () => {
       setSize("");
       setPrice("");
       setQuantity("");
-      setImageUri(null);
+      setSelectedImage(null);
     } catch (error) {
       Alert.alert("Гутал нэмэхэд алдаа гарлаа: ", error.message);
     }
@@ -103,22 +111,14 @@ const AddShoeScreen = () => {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.imagePicker} onPress={openImagePicker}>
-        {selectedImage && (
-          <Image
-            source={{ uri: selectedImage }}
-            style={{ flex: 1 }}
-            resizeMode="contain"
-          />
+        {selectedImage ? (
+          <Image source={{ uri: selectedImage }} style={styles.image} />
+        ) : (
+          <Text>Зургийг төхөөрөмжөөс сонгох</Text>
         )}
       </TouchableOpacity>
       <TouchableOpacity style={styles.imagePicker} onPress={openCamera}>
-        {selectedImage && (
-          <Image
-            source={{ uri: selectedImage }}
-            style={{ flex: 1 }}
-            resizeMode="contain"
-          />
-        )}
+        <Text>Камераар зураг авах</Text>
       </TouchableOpacity>
       <TextInput
         style={styles.input}

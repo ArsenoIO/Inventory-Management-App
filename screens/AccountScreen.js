@@ -7,9 +7,9 @@ export default function AccountScreen() {
   const navigation = useNavigation();
 
   const handleLogout = () => {
-    // Implement your logout logic here
+    // Implement logic here
     // For example, navigate to the logout screen or clear user session
-    navigation.navigate("Login"); // Navigate to login screen after logout
+    navigation.navigate("SignIn");
   };
 
   return (

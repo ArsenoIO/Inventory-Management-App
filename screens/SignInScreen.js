@@ -17,7 +17,7 @@ export default function SignInScreen() {
         email,
         password
       );
-      navigation.navigate("HomeScreen");
+      navigation.navigate("Main");
     } catch (error) {
       console.log(error);
       Alert.alert("Sign in failed :" + error.message);
