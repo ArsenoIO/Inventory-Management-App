@@ -13,7 +13,7 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { Picker } from "@react-native-picker/picker";
 
-export default function RevenueReportScreen() {
+const RevenueReportScreen = () => {
   const [shoes, setShoes] = useState([]);
   const [shoeCode, setShoeCode] = useState("");
   const [shoePrice, setShoePrice] = useState("");
@@ -207,7 +207,7 @@ export default function RevenueReportScreen() {
       />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -289,3 +289,5 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 });
+
+export default RevenueReportScreen;

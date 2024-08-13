@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import {
-  View,
-  TextInput,
   Button,
+  Image,
+  View,
+  Platform,
+  TextInput,
   StyleSheet,
   Text,
   Alert,
-  Image,
   TouchableOpacity,
 } from "react-native";
 import { firestore, storage } from "../firebaseConfig";
@@ -15,12 +16,12 @@ import { collection, addDoc } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 
 const AddShoeScreen = () => {
-  const [shoeName, setShoeName] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
   const [shoeCode, setShoeCode] = useState("");
+  const [shoeName, setShoeName] = useState("");
   const [size, setSize] = useState("");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [selectedImage, setSelectedImage] = useState(null);
 
   const requestPermission = async () => {
     if (Platform.OS !== "web") {
@@ -61,18 +62,25 @@ const AddShoeScreen = () => {
     });
 
     if (!result.canceled) {
-      setSelectedImage(result.uri);
+      setSelectedImage(result.assets[0].uri);
     }
   };
 
   const handleAddShoe = async () => {
-    if (!shoeName || !shoeCode || !size || !price || !imageUri) {
+    if (
+      !shoeName ||
+      !shoeCode ||
+      !size ||
+      !price ||
+      !quantity ||
+      !selectedImage
+    ) {
       Alert.alert("Бүх мэдээллээ оруулна уу.");
       return;
     }
 
     try {
-      const response = await fetch(imageUri);
+      const response = await fetch(selectedImage);
       const blob = await response.blob();
       const storageRef = ref(storage, `shoes/${shoeCode}.jpg`);
       await uploadBytes(storageRef, blob);
@@ -94,31 +102,27 @@ const AddShoeScreen = () => {
       setSize("");
       setPrice("");
       setQuantity("");
-      setImageUri(null);
+      setSelectedImage(null);
     } catch (error) {
       Alert.alert("Гутал нэмэхэд алдаа гарлаа: ", error.message);
+      console.log(error.message);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1, justifyContent: "center" }}>
+      {selectedImage && (
+        <Image
+          source={{ uri: selectedImage }}
+          style={{ flex: 1 }}
+          resizeMode="contain"
+        />
+      )}
       <TouchableOpacity style={styles.imagePicker} onPress={openImagePicker}>
-        {selectedImage && (
-          <Image
-            source={{ uri: selectedImage }}
-            style={{ flex: 1 }}
-            resizeMode="contain"
-          />
-        )}
+        <Text>Зургийг төхөөрөмжөөс сонгох</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.imagePicker} onPress={openCamera}>
-        {selectedImage && (
-          <Image
-            source={{ uri: selectedImage }}
-            style={{ flex: 1 }}
-            resizeMode="contain"
-          />
-        )}
+        <Text>Камераар дарах</Text>
       </TouchableOpacity>
       <TextInput
         style={styles.input}
@@ -173,7 +177,8 @@ const styles = StyleSheet.create({
   imagePicker: {
     alignItems: "center",
     justifyContent: "center",
-    height: 200,
+    height: 100,
+    width: 180,
     borderWidth: 1,
     borderColor: "gray",
     marginBottom: 12,
