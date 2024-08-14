@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, Button, TouchableOpacity } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { useNavigation } from "@react-navigation/native";
+import ScreenBackground from "../components/ScreenBackground";
 
 export default function AccountScreen() {
   const navigation = useNavigation();
@@ -13,7 +14,7 @@ export default function AccountScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenBackground>
       <View style={styles.header}>
         <MaterialCommunityIcons
           name="account-circle"
@@ -48,7 +49,7 @@ export default function AccountScreen() {
         <MaterialCommunityIcons name="logout" size={24} color="black" />
         <Text style={styles.logoutText}>Гарах</Text>
       </TouchableOpacity>
-    </View>
+    </ScreenBackground>
   );
 }
 

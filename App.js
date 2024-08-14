@@ -1,3 +1,4 @@
+/*
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -8,6 +9,7 @@ import AddShoeScreen from "./screens/AddShoeScreen";
 import AccountScreen from "./screens/AccountScreen";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import RevenueReportScreen from "./screens/RevenueReportScreen";
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -61,11 +63,38 @@ export default function App() {
         <Stack.Screen
           name="SignIn"
           component={SignInScreen}
-          /*options={{ headerShown: false }}*/
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="Main"
           component={MainTabs}
+          options={{ headerShown: false }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+*/
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import SignInScreen from "./screens/SignInScreen";
+import BottomNav from "./components/BottomNav"; // Шинээр импорт хийх
+
+const Stack = createStackNavigator();
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="SignIn">
+        <Stack.Screen
+          name="SignIn"
+          component={SignInScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Main"
+          component={BottomNav} // MainTabs-г BottomNav-аар сольж байна
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

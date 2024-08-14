@@ -1,9 +1,14 @@
 // SignInScreen.js
 import React, { useState } from "react";
-import { View, TextInput, Button, StyleSheet, Text, Alert } from "react-native";
-import { auth, firestore } from "../firebaseConfig";
+import { View, StyleSheet, Image, Text, Alert } from "react-native";
+import { auth } from "../firebaseConfig";
 import { useNavigation } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import Header from "../components/Header";
+import Background from "../components/Background";
+import Button from "../components/Button";
+import TextInput from "../components/TextInput";
+import { theme } from "../core/theme";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
@@ -25,35 +30,37 @@ export default function SignInScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <Background>
+      <Image source={require("../assets/logo.png")} style={styles.logo} />
+      <Header>Орос цаатан</Header>
       <TextInput
-        style={styles.input}
         placeholder="Email"
+        returnKeyType="next"
         value={email}
         onChangeText={setEmail}
+        autoCapitalize="none"
+        autoCompleteType="email"
+        textContentType="emailAddress"
+        keyboardType="email-address"
       />
       <TextInput
-        style={styles.input}
         placeholder="Password"
+        returnKeyType="done"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
-      <Button title="Sign In" onPress={handleSignIn} />
-    </View>
+      <Button mode="contained" onPress={handleSignIn}>
+        Log in
+      </Button>
+    </Background>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  input: {
-    height: 40,
-    borderColor: "gray",
-    borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 8,
+  logo: {
+    width: 110,
+    height: 110,
+    marginBottom: 8,
   },
 });
