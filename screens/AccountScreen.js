@@ -14,7 +14,7 @@ export default function AccountScreen() {
   };
 
   return (
-    <ScreenBackground>
+    <View style={styles.container}>
       <View style={styles.header}>
         <MaterialCommunityIcons
           name="account-circle"
@@ -49,7 +49,7 @@ export default function AccountScreen() {
         <MaterialCommunityIcons name="logout" size={24} color="black" />
         <Text style={styles.logoutText}>Гарах</Text>
       </TouchableOpacity>
-    </ScreenBackground>
+    </View>
   );
 }
 

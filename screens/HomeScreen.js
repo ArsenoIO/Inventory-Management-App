@@ -34,6 +34,10 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
+      <View>
+        <Text>Энэ хэсэгт Header Байна</Text>
+      </View>
+
       <FlatList
         data={data}
         keyExtractor={(item) => item.id}
