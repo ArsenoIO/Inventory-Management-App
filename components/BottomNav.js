@@ -4,7 +4,6 @@ import HomeScreen from "../screens/HomeScreen";
 import AddShoeScreen from "../screens/AddShoeScreen";
 import RevenueReportScreen from "../screens/RevenueReportScreen";
 import AccountScreen from "../screens/AccountScreen";
-import TailanScreen from "../screens/tailanScreen";
 
 const BottomNav = () => {
   const [index, setIndex] = React.useState(0);
@@ -22,7 +21,7 @@ const BottomNav = () => {
       case "addShoe":
         return <AddShoeScreen />;
       case "revenue":
-        return <TailanScreen />;
+        return <RevenueReportScreen />;
       case "account":
         return <AccountScreen />;
       default:

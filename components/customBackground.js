@@ -6,13 +6,9 @@ import {
 } from "react-native";
 import { theme } from "../core/theme";
 
-export default function ScreenBackground({ children }) {
+export default function CustomBackground({ children }) {
   return (
-    <ImageBackground
-      source={require("../assets/dot.png")}
-      resizeMode="repeat"
-      style={styles.background}
-    >
+    <ImageBackground resizeMode="repeat" style={styles.background}>
       <KeyboardAvoidingView style={styles.container} behavior="padding">
         {children}
       </KeyboardAvoidingView>
@@ -28,8 +24,8 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    padding: 20,
     width: "100%",
-    maxWidth: "100%",
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",

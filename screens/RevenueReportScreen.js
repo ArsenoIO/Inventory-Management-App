@@ -1,209 +1,196 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  View,
-  Text,
   Button,
   TextInput,
+  View,
   StyleSheet,
-  TouchableOpacity,
-  Alert,
   FlatList,
+  Text,
+  Alert,
 } from "react-native";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { Picker } from "@react-native-picker/picker";
+import { firestore, auth } from "../firebaseConfig";
+import {
+  collection,
+  doc,
+  updateDoc,
+  getDocs,
+  query,
+  where,
+  Timestamp,
+  getDoc,
+} from "firebase/firestore";
 
 const RevenueReportScreen = () => {
-  const [shoes, setShoes] = useState([]);
   const [shoeCode, setShoeCode] = useState("");
-  const [shoePrice, setShoePrice] = useState("");
-  const [shoeSize, setShoeSize] = useState("");
-  const [discountedPrice, setDiscountedPrice] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-  const [date, setDate] = useState(new Date());
+  const [shoeSoldPrice, setShoeSoldPrice] = useState("");
+  const [isTransaction, setIsTransaction] = useState(false);
+  const [isTransactionLeasing, setIsTransactionLeasing] = useState(false);
+  const [isTransactionLendpay, setIsTransactionLendpay] = useState(false);
+  const [isTransactionPocket, setIsTransactionPocket] = useState(false);
+  const [isTransactionStorepay, setIsTransactionStorepay] = useState(false);
+  const [locationSold, setLocationSold] = useState("");
+  const [soldUserID, setSoldUserID] = useState("");
+  const [soldShoes, setSoldShoes] = useState([]);
+  const [totalSalesCount, setTotalSalesCount] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [user, setUser] = useState(null);
 
-  const handleAddShoe = () => {
-    if (
-      !shoeCode ||
-      !shoePrice ||
-      !shoeSize ||
-      !discountedPrice ||
-      !paymentMethod
-    ) {
-      Alert.alert("Алдаа", "Бүх талбарыг бөглөнө үү!");
+  const fetchUserData = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(firestore, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUser(userData);
+          setSoldUserID(user.uid);
+          setLocationSold(userData.branch); // Assuming 'branch' is the field name in Firestore
+        } else {
+          Alert.alert("Хэрэглэгчийн мэдээлэл олдсонгүй.");
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user data: ", error);
+      Alert.alert(
+        "Хэрэглэгчийн мэдээллийг татахад алдаа гарлаа: ",
+        error.message
+      );
+    }
+  };
+
+  const handleCheck = async () => {
+    try {
+      const shoeRef = collection(firestore, "shoes");
+      const e = query(shoeRef, where("shoeCode", "==", shoeCode));
+      const querySnapshot = await getDocs(e);
+      if (querySnapshot.empty) {
+        Alert.alert("Гутлын код олдсонгүй.");
+        return;
+      } else {
+        Alert.alert("Амжилттай");
+      }
+    } catch (e) {
+      Alert.alert("АЛДАА ГАРЛАА");
+    }
+  };
+
+  const handleUpdateShoe = async () => {
+    if (!shoeCode || !shoeSoldPrice) {
+      Alert.alert("Бүх мэдээллээ оруулна уу.");
       return;
     }
 
-    const newShoe = {
-      id: Math.random().toString(),
-      code: shoeCode,
-      price: shoePrice,
-      size: shoeSize,
-      discountedPrice: discountedPrice,
-      paymentMethod: paymentMethod,
-      dateAdded: new Date().toLocaleDateString(),
-    };
+    try {
+      const shoeRef = collection(firestore, "shoes");
+      const q = query(shoeRef, where("shoeCode", "==", shoeCode));
+      const querySnapshot = await getDocs(q);
 
-    setShoes((prevShoes) => [...prevShoes, newShoe]);
-    setShoeCode("");
-    setShoePrice("");
-    setShoeSize("");
-    setDiscountedPrice("");
-    setPaymentMethod("");
-    Alert.alert("Мэдээлэл", "Гутлыг амжилттай нэмлээ!");
-  };
+      if (querySnapshot.empty) {
+        Alert.alert("Гутлын код олдсонгүй.");
+        return;
+      }
 
-  const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <View style={styles.row}>
-        <Text style={styles.label}>Код:</Text>
-        <Text style={styles.value}>{item.code}</Text>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Үнэ:</Text>
-        <Text style={styles.value}>{item.price}</Text>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Размер:</Text>
-        <Text style={styles.value}>{item.size}</Text>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Хямдарсан үнэ:</Text>
-        <Text style={styles.value}>{item.discountedPrice}</Text>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Төлбөрийн хэрэгсэл:</Text>
-        <Text style={styles.value}>{item.paymentMethod}</Text>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Нэмсэн огноо:</Text>
-        <Text style={styles.value}>{item.dateAdded}</Text>
-      </View>
-    </View>
-  );
+      querySnapshot.forEach(async (doc) => {
+        await updateDoc(doc.ref, {
+          shoeSoldPrice,
+          isTransaction,
+          isTransactionLeasing,
+          isTransactionLendpay,
+          isTransactionPocket,
+          isTransactionStorepay,
+          locationSold,
+          shoeSoldDate: Timestamp.fromDate(new Date()),
+          soldUserID,
+        });
+      });
 
-  const handleSearchShoe = () => {
-    if (shoeCode === "123456") {
-      setShoePrice("1600000");
-      setShoeSize("37");
-    } else {
-      Alert.alert("Алдаа", "Гутал олдсонгүй");
+      Alert.alert("Гутлын мэдээллийг амжилттай шинэчиллээ.");
       setShoeCode("");
-      setShoePrice("");
-      setShoeSize("");
+      setShoeSoldPrice("");
+      setIsTransaction(false);
+      setIsTransactionLeasing(false);
+      setIsTransactionLendpay(false);
+      setIsTransactionPocket(false);
+      setIsTransactionStorepay(false);
+      setLocationSold("");
+      setSoldUserID("");
+      fetchSoldShoes(); // Refresh the sold shoes list
+    } catch (error) {
+      Alert.alert("Мэдээллийг шинэчлэхэд алдаа гарлаа: ", error.message);
     }
   };
 
-  const showDatePicker = () => {
-    setDatePickerVisibility(true);
+  const fetchSoldShoes = async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+
+      const shoeRef = collection(firestore, "shoes");
+      const q = query(
+        shoeRef,
+        where("shoeSoldDate", ">=", Timestamp.fromDate(today)),
+        where("shoeSoldDate", "<", Timestamp.fromDate(tomorrow))
+      );
+      const querySnapshot = await getDocs(q);
+      const soldShoesList = [];
+      let totalAmount = 0;
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        soldShoesList.push(data);
+        totalAmount += parseFloat(data.shoeSoldPrice);
+      });
+
+      setSoldShoes(soldShoesList);
+      setTotalSalesCount(soldShoesList.length);
+      setTotalAmount(totalAmount);
+    } catch (error) {
+      Alert.alert("Мэдээллийг татахад алдаа гарлаа: ", error.message);
+    }
   };
 
-  const handleUpload = () => {
-    alert("Амжилттай илгээгдлээ");
-  };
-
-  const hideDatePicker = () => {
-    setDatePickerVisibility(false);
-  };
-
-  const handleConfirm = (date) => {
-    // Handle date selection
-    hideDatePicker();
-  };
-
-  const clearList = () => {
-    setShoes([]);
-  };
+  useEffect(() => {
+    fetchUserData();
+    fetchSoldShoes();
+  }, []);
 
   return (
     <View style={styles.container}>
-      <View style={styles.inputContainer}>
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            placeholder="ГУТЛЫН КОД"
-            value={shoeCode}
-            onChangeText={setShoeCode}
-          />
-          <TouchableOpacity
-            onPress={handleSearchShoe}
-            style={styles.searchButton}
-          >
-            <MaterialCommunityIcons
-              name="cloud-search-outline"
-              size={24}
-              color="#ffffff"
-            />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            placeholder="Үнэ"
-            value={shoePrice}
-            onChangeText={setShoePrice}
-            keyboardType="numeric"
-            editable={false}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Размер"
-            value={shoeSize}
-            onChangeText={setShoeSize}
-            editable={false}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Хямдарсан үнэ"
-            value={discountedPrice}
-            onChangeText={setDiscountedPrice}
-            keyboardType="numeric"
-          />
-        </View>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={paymentMethod}
-            style={styles.picker}
-            onValueChange={(itemValue) => setPaymentMethod(itemValue)}
-          >
-            <Picker.Item label="Төлбөр төлөх хэлбэр" value="" />
-            <Picker.Item label="Шууд төлөлт" value="Шууд төлөлт" />
-            <Picker.Item label="StorePay" value="StorePay" />
-            <Picker.Item label="Pocket" value="Pocket" />
-            <Picker.Item label="LendPay" value="LendPay" />
-            <Picker.Item label="Хувь лизинг" value="Хувь лизинг" />
-          </Picker>
-        </View>
+      <TextInput
+        style={styles.input}
+        placeholder="Гутлын код"
+        value={shoeCode}
+        onChangeText={setShoeCode}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Зарагдсан үнэ"
+        value={shoeSoldPrice}
+        onChangeText={setShoeSoldPrice}
+        keyboardType="numeric"
+      />
+      <Button title="Гутлын мэдээллийг шинэчлэх" onPress={handleUpdateShoe} />
+
+      <Button style={styles.button} title="Шалгах" onPress={handleCheck} />
+
+      <View style={styles.summary}>
+        <Text>Өнөөдрийн нийт зарсан гутлын тоо: {totalSalesCount}</Text>
+        <Text>Өнөөдрийн нийт үнийн дүн: {totalAmount}</Text>
       </View>
 
-      <View style={styles.buttonContainer}>
-        <Button color="#0066CC" title="Нэмэх" onPress={handleAddShoe} />
-        <Button color="green" title="Илгээх" onPress={handleUpload} />
-        <Button color="#CC3300" title="Цэвэрлэх" onPress={clearList} />
-      </View>
-
-      <View style={styles.listContainer}>
-        <FlatList
-          data={shoes}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          ListHeaderComponent={
-            <View style={styles.listHeader}>
-              <Text style={styles.headerText}>
-                Орлого - {date.toLocaleDateString()}
-              </Text>
-            </View>
-          }
-        />
-      </View>
-
-      <DateTimePickerModal
-        isVisible={isDatePickerVisible}
-        mode="date"
-        onConfirm={handleConfirm}
-        onCancel={hideDatePicker}
-        date={date}
+      <FlatList
+        data={soldShoes}
+        keyExtractor={(item) => item.shoeCode}
+        renderItem={({ item }) => (
+          <View style={styles.shoeItem}>
+            <Text>Гутлын код: {item.shoeCode}</Text>
+            <Text>Гутлын нэр: {item.shoeName}</Text>
+            <Text>Зарагдсан үнэ: {item.shoeSoldPrice}</Text>
+          </View>
+        )}
       />
     </View>
   );
@@ -213,80 +200,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#fff",
-  },
-  inputContainer: {
-    marginBottom: 16,
   },
   input: {
-    flex: 1,
     height: 40,
     borderColor: "gray",
-    borderBottomWidth: 1,
+    borderWidth: 1,
     marginBottom: 12,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
-  searchButton: {
-    backgroundColor: "#0066CC",
-    padding: 10,
-    marginLeft: 10,
-    borderRadius: 5,
+  summary: {
+    marginVertical: 16,
   },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 16,
-  },
-  listContainer: {
-    flex: 1,
-  },
-  listHeader: {
-    backgroundColor: "#f0f0f0",
-    padding: 8,
-    marginBottom: 8,
-    alignItems: "center",
-  },
-  headerText: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  item: {
-    padding: 16,
+  shoeItem: {
+    padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    borderBottomColor: "#ddd",
   },
-  itemText: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  label: {
-    fontSize: 16,
-    color: "#666",
-    fontWeight: "bold",
-    marginRight: 8,
-  },
-  pickerContainer: {
-    borderColor: "gray",
-    borderBottomWidth: 1,
-    marginBottom: 12,
-  },
-  picker: {
-    height: 40,
-    width: "100%",
-  },
-  value: {
-    fontSize: 16,
-    color: "#333",
+  button: {
+    color: "red",
   },
 });
 

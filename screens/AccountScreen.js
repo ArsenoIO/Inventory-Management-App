@@ -1,98 +1,84 @@
-import React from "react";
-import { View, Text, StyleSheet, Button, TouchableOpacity } from "react-native";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { useNavigation } from "@react-navigation/native";
-import ScreenBackground from "../components/ScreenBackground";
+import React, { useEffect, useState } from "react";
+import { View, Text, Button, Alert, StyleSheet } from "react-native";
+import { Avatar } from "react-native-paper";
+import { auth, firestore } from "../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { signOut } from "firebase/auth";
 
-export default function AccountScreen() {
-  const navigation = useNavigation();
+const ProfileScreen = ({ navigation }) => {
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleLogout = () => {
-    // Implement logic here
-    // For example, navigate to the logout screen or clear user session
-    navigation.navigate("SignIn");
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(firestore, "users", user.uid));
+          if (userDoc.exists()) {
+            setUserData(userDoc.data());
+          } else {
+            console.log("No such document!");
+          }
+        } else {
+          console.log("No user is logged in!");
+        }
+      } catch (error) {
+        console.error("Error fetching user data: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserData();
+  }, []);
+
+  const handleSignOut = () => {
+    Alert.alert("Гарах", "Та гарахдаа итгэлтэй байна уу?", [
+      {
+        text: "Болих",
+        onPress: () => {},
+        style: "cancel",
+      },
+      {
+        text: "Гарах",
+        onPress: async () => {
+          await signOut(auth);
+          navigation.replace("SignInScreen");
+        },
+      },
+    ]);
   };
+
+  if (loading) {
+    return <Text>Ачааллаж байна...</Text>;
+  }
+
+  if (!userData) {
+    return <Text>Хэрэглэгчийн мэдээлэл олдсонгүй.</Text>;
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <MaterialCommunityIcons
-          name="account-circle"
-          size={150}
-          color="#45474B"
-        />
-      </View>
-
-      <View style={styles.infoContainer}>
-        <View style={styles.infoItem}>
-          <Text style={styles.label}>Хэрэглэгчийн ID:</Text>
-          <Text style={styles.value}>#001</Text>
-        </View>
-
-        <View style={styles.infoItem}>
-          <Text style={styles.label}>Нэр:</Text>
-          <Text style={styles.value}>Доржоо</Text>
-        </View>
-
-        <View style={styles.infoItem}>
-          <Text style={styles.label}>Нэвтрэх нэр:</Text>
-          <Text style={styles.value}>ots001</Text>
-        </View>
-
-        <View style={styles.infoItem}>
-          <Text style={styles.label}>Салбар:</Text>
-          <Text style={styles.value}>ТӨВ САЛБАР</Text>
-        </View>
-      </View>
-
-      <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-        <MaterialCommunityIcons name="logout" size={24} color="black" />
-        <Text style={styles.logoutText}>Гарах</Text>
-      </TouchableOpacity>
+      <Avatar.Icon size={100} icon="account" />
+      <Text style={styles.text}>Нэр: {userData.name}</Text>
+      <Text style={styles.text}>Бүртгэлтэй хаяг: {userData.email}</Text>
+      <Text style={styles.text}>Салбар: {userData.branch}</Text>
+      <Button title="Гарах" onPress={handleSignOut} />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: "#fff",
-  },
-  header: {
-    flexDirection: "column",
-    alignItems: "center",
-    marginBottom: 30,
-    marginTop: 10,
-  },
-  infoContainer: {
-    marginBottom: 24,
-  },
-  infoItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  label: {
-    fontSize: 18,
-    color: "gray",
-  },
-  value: {
-    fontSize: 17,
-    fontWeight: "bold",
-  },
-  logoutButton: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#CE5A67",
-    padding: 12,
-    marginTop: 20,
+    padding: 20,
   },
-  logoutText: {
-    color: "white",
+  text: {
     fontSize: 18,
-    marginLeft: 10,
+    marginVertical: 10,
   },
 });
+
+export default ProfileScreen;

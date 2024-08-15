@@ -1,12 +1,22 @@
-import React, { useState } from "react";
-import { Image, View, Platform, StyleSheet, Alert } from "react-native";
-import { firestore, storage } from "../firebaseConfig";
+import React, { useState, useEffect } from "react";
+import {
+  Image,
+  View,
+  Platform,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from "react-native";
+import { firestore, storage, auth } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, Timestamp } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import Button from "../components/Button";
-import TextInput from "../components/TextInput";
 import Text from "../components/Text";
+import { TextInput as PaperTextInput } from "react-native-paper";
+import Header from "../components/Header";
+import CustomBackground from "../components/customBackground";
+import ScreenButton from "../components/ScreenButton";
 
 const AddShoeScreen = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -16,6 +26,31 @@ const AddShoeScreen = () => {
   const [price, setPrice] = useState("");
   const [addedUserID, setAddedUserID] = useState("");
   const [locationAdded, setLocationAdded] = useState("");
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(firestore, "users", user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUserData(userData);
+            setAddedUserID(userData.name); // Автоматаар хэрэглэгчийн нэрийг тохируулах
+            setLocationAdded(userData.branch); // Автоматаар салбарыг тохируулах
+          } else {
+            console.log("No such document!");
+          }
+        } else {
+          console.log("No user is logged in!");
+        }
+      } catch (error) {
+        console.error("Error fetching user data: ", error);
+      }
+    };
+    fetchUserData();
+  }, []);
 
   const requestPermission = async () => {
     if (Platform.OS !== "web") {
@@ -88,8 +123,9 @@ const AddShoeScreen = () => {
         price,
         imageUrl,
         shoeDateAdded: Timestamp.fromDate(new Date()), // Current timestamp
-        addedUserID,
-        locationAdded,
+        addedUserID: userData ? userData.name : "",
+
+        locationAdded: userData ? userData.branch : "",
         shoeSoldDate: null,
         shoeSoldPrice: null,
         isTransaction: null,
@@ -117,88 +153,93 @@ const AddShoeScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {selectedImage && (
-        <Image
-          source={{ uri: selectedImage }}
-          style={styles.image}
-          resizeMode="contain"
-        />
-      )}
-      <Text>Энэ бол хэлбэржүүлсэн текст</Text>
-      <Button mode="elevated" icon="file" onPress={openImagePicker}>
-        Файлаас сонгох
-      </Button>
-      <Button mode="outlined" icon="camera" onPress={openCamera}>
-        Камер ашиглах
-      </Button>
-      <View style={styles.row}>
-        <Text style={styles.label}>Гутлын код:</Text>
-        <TextInput
-          placeholder="TMA"
-          value={shoeName}
-          onChangeText={setShoeName}
-          style={styles.input}
-        />
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Гутлын код:</Text>
-        <TextInput
-          placeholder="00001"
-          value={shoeCode}
-          onChangeText={setShoeCode}
-          style={styles.input}
-        />
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Гутлын размер:</Text>
-        <TextInput
-          placeholder="34-44"
-          value={size}
-          onChangeText={setSize}
-          keyboardType="numeric"
-          style={styles.input}
-        />
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Гутлын үнийн дүн:</Text>
-        <TextInput
-          placeholder="Үнэ"
-          value={price}
-          onChangeText={setPrice}
-          keyboardType="numeric"
-          style={styles.input}
-        />
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Хэрэглэгчийн ID:</Text>
-        <TextInput
-          placeholder="Хэрэглэгчийн ID"
-          value={addedUserID}
-          onChangeText={setAddedUserID}
-          style={styles.input}
-        />
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Байршлын нэр:</Text>
-        <TextInput
-          placeholder="Байршлын нэр"
-          value={locationAdded}
-          onChangeText={setLocationAdded}
-          style={styles.input}
-        />
-      </View>
-      <Button mode="contained" title="Нэмэх" onPress={handleAddShoe}>
-        Нэмэх
-      </Button>
-    </View>
+    <CustomBackground>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Header>Гутал шинээр бүргэх</Header>
+        {selectedImage && (
+          <Image
+            source={{ uri: selectedImage }}
+            style={styles.image}
+            resizeMode="contain"
+          />
+        )}
+        <Button mode="elevated" icon="file" onPress={openImagePicker}>
+          Файлаас сонгох
+        </Button>
+        <Button mode="outlined" icon="camera" onPress={openCamera}>
+          Камер ашиглах
+        </Button>
+        <View style={styles.row}>
+          <Text style={styles.label}>Гутлын код:</Text>
+          <PaperTextInput
+            placeholder="TMA"
+            returnKeyType="next"
+            value={shoeName}
+            onChangeText={setShoeName}
+            style={styles.input}
+          />
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Гутлын код:</Text>
+          <PaperTextInput
+            placeholder="00001"
+            returnKeyType="next"
+            value={shoeCode}
+            onChangeText={setShoeCode}
+            style={styles.input}
+          />
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Гутлын размер:</Text>
+          <PaperTextInput
+            placeholder="34-44"
+            returnKeyType="next"
+            value={size}
+            onChangeText={setSize}
+            keyboardType="numeric"
+            style={styles.input}
+          />
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Гутлын үнийн дүн:</Text>
+          <PaperTextInput
+            placeholder="Үнэ"
+            returnKeyType="enter"
+            value={price}
+            onChangeText={setPrice}
+            keyboardType="numeric"
+            style={styles.input}
+          />
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Хэрэглэгч:</Text>
+          <PaperTextInput
+            value={addedUserID}
+            onChangeText={setAddedUserID}
+            style={styles.input}
+          />
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Бүртгэсэн хаяг:</Text>
+          <PaperTextInput
+            value={locationAdded}
+            onChangeText={setLocationAdded}
+            style={styles.input}
+          />
+        </View>
+        <Button mode="contained" onPress={handleAddShoe}>
+          Нэмэх
+        </Button>
+        <ScreenButton mode="contained" label="Нэмэх"></ScreenButton>
+      </ScrollView>
+    </CustomBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 16,
+    flexGrow: 1,
+    padding: 20,
     justifyContent: "center",
   },
   row: {
