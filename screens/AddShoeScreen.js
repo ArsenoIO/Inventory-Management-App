@@ -1,19 +1,12 @@
 import React, { useState } from "react";
-import {
-  Button,
-  Image,
-  View,
-  Platform,
-  TextInput,
-  StyleSheet,
-  Text,
-  Alert,
-  TouchableOpacity,
-} from "react-native";
+import { Image, View, Platform, StyleSheet, Alert } from "react-native";
 import { firestore, storage } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, Timestamp } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
+import Button from "../components/Button";
+import TextInput from "../components/TextInput";
+import Text from "../components/Text";
 
 const AddShoeScreen = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -21,7 +14,8 @@ const AddShoeScreen = () => {
   const [shoeName, setShoeName] = useState("");
   const [size, setSize] = useState("");
   const [price, setPrice] = useState("");
-  const [quantity, setQuantity] = useState("");
+  const [addedUserID, setAddedUserID] = useState("");
+  const [locationAdded, setLocationAdded] = useState("");
 
   const requestPermission = async () => {
     if (Platform.OS !== "web") {
@@ -72,8 +66,9 @@ const AddShoeScreen = () => {
       !shoeCode ||
       !size ||
       !price ||
-      !quantity ||
-      !selectedImage
+      !selectedImage ||
+      !addedUserID ||
+      !locationAdded
     ) {
       Alert.alert("Бүх мэдээллээ оруулна уу.");
       return;
@@ -91,9 +86,20 @@ const AddShoeScreen = () => {
         shoeCode,
         size,
         price,
-        quantity,
         imageUrl,
-        dateAdded: new Date().toISOString(),
+        shoeDateAdded: Timestamp.fromDate(new Date()), // Current timestamp
+        addedUserID,
+        locationAdded,
+        shoeSoldDate: null,
+        shoeSoldPrice: null,
+        isTransaction: null,
+        isTransactionStorepay: null,
+        isTransactionPocket: null,
+        isTransactionLendpay: null,
+        isTransactionLeesing: null,
+        soldUserID: null,
+        buyerPhoneNumber: null,
+        locationSold: null,
       });
 
       Alert.alert("Гутал амжилттай нэмэгдлээ!");
@@ -101,8 +107,9 @@ const AddShoeScreen = () => {
       setShoeCode("");
       setSize("");
       setPrice("");
-      setQuantity("");
       setSelectedImage(null);
+      setAddedUserID("");
+      setLocationAdded("");
     } catch (error) {
       Alert.alert("Гутал нэмэхэд алдаа гарлаа: ", error.message);
       console.log(error.message);
@@ -110,54 +117,80 @@ const AddShoeScreen = () => {
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: "center" }}>
+    <View style={styles.container}>
       {selectedImage && (
         <Image
           source={{ uri: selectedImage }}
-          style={{ flex: 1 }}
+          style={styles.image}
           resizeMode="contain"
         />
       )}
-      <TouchableOpacity style={styles.imagePicker} onPress={openImagePicker}>
-        <Text>Зургийг төхөөрөмжөөс сонгох</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.imagePicker} onPress={openCamera}>
-        <Text>Камераар дарах</Text>
-      </TouchableOpacity>
-      <TextInput
-        style={styles.input}
-        placeholder="Гутлын нэр"
-        value={shoeName}
-        onChangeText={setShoeName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Гутлын код"
-        value={shoeCode}
-        onChangeText={setShoeCode}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Хэмжээ"
-        value={size}
-        onChangeText={setSize}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Үнэ"
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Тоо"
-        value={quantity}
-        onChangeText={setQuantity}
-        keyboardType="numeric"
-      />
-      <Button title="Нэмэх" onPress={handleAddShoe} />
+      <Text>Энэ бол хэлбэржүүлсэн текст</Text>
+      <Button mode="elevated" icon="file" onPress={openImagePicker}>
+        Файлаас сонгох
+      </Button>
+      <Button mode="outlined" icon="camera" onPress={openCamera}>
+        Камер ашиглах
+      </Button>
+      <View style={styles.row}>
+        <Text style={styles.label}>Гутлын код:</Text>
+        <TextInput
+          placeholder="TMA"
+          value={shoeName}
+          onChangeText={setShoeName}
+          style={styles.input}
+        />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Гутлын код:</Text>
+        <TextInput
+          placeholder="00001"
+          value={shoeCode}
+          onChangeText={setShoeCode}
+          style={styles.input}
+        />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Гутлын размер:</Text>
+        <TextInput
+          placeholder="34-44"
+          value={size}
+          onChangeText={setSize}
+          keyboardType="numeric"
+          style={styles.input}
+        />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Гутлын үнийн дүн:</Text>
+        <TextInput
+          placeholder="Үнэ"
+          value={price}
+          onChangeText={setPrice}
+          keyboardType="numeric"
+          style={styles.input}
+        />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Хэрэглэгчийн ID:</Text>
+        <TextInput
+          placeholder="Хэрэглэгчийн ID"
+          value={addedUserID}
+          onChangeText={setAddedUserID}
+          style={styles.input}
+        />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Байршлын нэр:</Text>
+        <TextInput
+          placeholder="Байршлын нэр"
+          value={locationAdded}
+          onChangeText={setLocationAdded}
+          style={styles.input}
+        />
+      </View>
+      <Button mode="contained" title="Нэмэх" onPress={handleAddShoe}>
+        Нэмэх
+      </Button>
     </View>
   );
 };
@@ -166,26 +199,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    justifyContent: "center",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  label: {
+    width: "30%",
+    fontSize: 16,
   },
   input: {
-    height: 40,
-    borderColor: "gray",
-    borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 8,
-  },
-  imagePicker: {
-    alignItems: "center",
-    justifyContent: "center",
-    height: 100,
-    width: 180,
-    borderWidth: 1,
-    borderColor: "gray",
-    marginBottom: 12,
+    width: "70%",
+    backgroundColor: "transparent",
   },
   image: {
     width: "100%",
-    height: "100%",
+    height: 200,
+    marginBottom: 16,
   },
 });
 

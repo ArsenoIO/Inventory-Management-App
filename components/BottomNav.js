@@ -4,7 +4,6 @@ import HomeScreen from "../screens/HomeScreen";
 import AddShoeScreen from "../screens/AddShoeScreen";
 import RevenueReportScreen from "../screens/RevenueReportScreen";
 import AccountScreen from "../screens/AccountScreen";
-import NewScreen from "../screens/newScreen";
 import TailanScreen from "../screens/tailanScreen";
 
 const BottomNav = () => {
@@ -21,7 +20,7 @@ const BottomNav = () => {
       case "home":
         return <HomeScreen />;
       case "addShoe":
-        return <NewScreen />;
+        return <AddShoeScreen />;
       case "revenue":
         return <TailanScreen />;
       case "account":
