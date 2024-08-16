@@ -11,12 +11,27 @@ import { firestore, storage, auth } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { collection, addDoc, doc, getDoc, Timestamp } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
-import Button from "../components/Button";
+import CustomButton from "../components/CustomButton";
 import Text from "../components/Text";
 import { TextInput as PaperTextInput } from "react-native-paper";
-import Header from "../components/Header";
 import CustomBackground from "../components/customBackground";
-import ScreenButton from "../components/ScreenButton";
+import ModalSelector from "react-native-modal-selector";
+
+const options = [
+  { key: 1, label: "TMA" },
+  { key: 2, label: "ABR" },
+  { key: 3, label: "BRA" },
+  { key: 4, label: "CMB" },
+  { key: 5, label: "MDN" },
+  { key: 6, label: "RCH" },
+  { key: 7, label: "DGA" },
+  { key: 8, label: "TAN" },
+  { key: 9, label: "BDJ" },
+  { key: 10, label: "ARR" },
+  { key: 11, label: "ACA" },
+  { key: 12, label: "ALA" },
+  { key: 13, label: "AHA" },
+];
 
 const AddShoeScreen = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -37,8 +52,8 @@ const AddShoeScreen = () => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setUserData(userData);
-            setAddedUserID(userData.name); // Автоматаар хэрэглэгчийн нэрийг тохируулах
-            setLocationAdded(userData.branch); // Автоматаар салбарыг тохируулах
+            setAddedUserID(userData.name);
+            setLocationAdded(userData.branch);
           } else {
             console.log("No such document!");
           }
@@ -86,7 +101,7 @@ const AddShoeScreen = () => {
     let result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: [3, 4],
       quality: 1,
     });
 
@@ -116,6 +131,7 @@ const AddShoeScreen = () => {
       await uploadBytes(storageRef, blob);
       const imageUrl = await getDownloadURL(storageRef);
 
+      const start = new Date().getTime();
       await addDoc(collection(firestore, "shoes"), {
         shoeName,
         shoeCode,
@@ -137,8 +153,10 @@ const AddShoeScreen = () => {
         buyerPhoneNumber: null,
         locationSold: null,
       });
+      const end = new Date().getTime();
 
       Alert.alert("Гутал амжилттай нэмэгдлээ!");
+      console.log(`Өгөгдөл нэмэх хугацаа: ${end - start} ms`);
       setShoeName("");
       setShoeCode("");
       setSize("");
@@ -155,7 +173,6 @@ const AddShoeScreen = () => {
   return (
     <CustomBackground>
       <ScrollView contentContainerStyle={styles.container}>
-        <Header>Гутал шинээр бүргэх</Header>
         {selectedImage && (
           <Image
             source={{ uri: selectedImage }}
@@ -163,30 +180,31 @@ const AddShoeScreen = () => {
             resizeMode="contain"
           />
         )}
-        <Button mode="elevated" icon="file" onPress={openImagePicker}>
-          Файлаас сонгох
-        </Button>
-        <Button mode="outlined" icon="camera" onPress={openCamera}>
-          Камер ашиглах
-        </Button>
         <View style={styles.row}>
-          <Text style={styles.label}>Гутлын код:</Text>
-          <PaperTextInput
-            placeholder="TMA"
-            returnKeyType="next"
-            value={shoeName}
-            onChangeText={setShoeName}
-            style={styles.input}
-          />
+          <CustomButton mode="elevated" icon="file" onPress={openImagePicker}>
+            Файлаас сонгох
+          </CustomButton>
+          <CustomButton mode="contained" icon="camera" onPress={openCamera}>
+            Камер ашиглах
+          </CustomButton>
         </View>
+
         <View style={styles.row}>
           <Text style={styles.label}>Гутлын код:</Text>
           <PaperTextInput
-            placeholder="00001"
+            placeholder="A00001"
             returnKeyType="next"
+            mode="outlined"
             value={shoeCode}
             onChangeText={setShoeCode}
-            style={styles.input}
+            style={styles.inputOutlined}
+          />
+          <ModalSelector
+            data={options}
+            initValue="AAA"
+            onChange={(option) => setShoeName(option.label)}
+            style={styles.modalSelector}
+            cancelButtonText="Цуцлах"
           />
         </View>
         <View style={styles.row}>
@@ -197,7 +215,7 @@ const AddShoeScreen = () => {
             value={size}
             onChangeText={setSize}
             keyboardType="numeric"
-            style={styles.input}
+            style={styles.inputSecond}
           />
         </View>
         <View style={styles.row}>
@@ -208,7 +226,7 @@ const AddShoeScreen = () => {
             value={price}
             onChangeText={setPrice}
             keyboardType="numeric"
-            style={styles.input}
+            style={styles.inputSecond}
           />
         </View>
         <View style={styles.row}>
@@ -216,7 +234,8 @@ const AddShoeScreen = () => {
           <PaperTextInput
             value={addedUserID}
             onChangeText={setAddedUserID}
-            style={styles.input}
+            style={styles.disabledInput}
+            editable={false}
           />
         </View>
         <View style={styles.row}>
@@ -224,13 +243,13 @@ const AddShoeScreen = () => {
           <PaperTextInput
             value={locationAdded}
             onChangeText={setLocationAdded}
-            style={styles.input}
+            style={styles.disabledInput}
+            editable={false}
           />
         </View>
-        <Button mode="contained" onPress={handleAddShoe}>
+        <CustomButton mode="contained" onPress={handleAddShoe}>
           Нэмэх
-        </Button>
-        <ScreenButton mode="contained" label="Нэмэх"></ScreenButton>
+        </CustomButton>
       </ScrollView>
     </CustomBackground>
   );
@@ -240,7 +259,8 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    justifyContent: "center",
+    marginTop: "10%",
+    justifyContent: "top",
   },
   row: {
     flexDirection: "row",
@@ -250,8 +270,13 @@ const styles = StyleSheet.create({
   label: {
     width: "30%",
     fontSize: 16,
+    fontWeight: "bold",
   },
   input: {
+    width: "35%",
+    backgroundColor: "transparent",
+  },
+  inputSecond: {
     width: "70%",
     backgroundColor: "transparent",
   },
@@ -259,6 +284,21 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 200,
     marginBottom: 16,
+  },
+  disabledInput: {
+    backgroundColor: "#F1F1F1",
+    width: "70%",
+  },
+  modalSelector: {
+    flex: 1,
+    backgroundColor: "transparent",
+    borderColor: "black",
+    height: 40,
+  },
+  inputOutlined: {
+    width: "35%",
+    backgroundColor: "transparent",
+    height: 40,
   },
 });
 

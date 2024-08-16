@@ -1,223 +1,236 @@
 import React, { useState, useEffect } from "react";
 import {
-  Button,
-  TextInput,
   View,
   StyleSheet,
-  FlatList,
-  Text,
   Alert,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
 } from "react-native";
-import { firestore, auth } from "../firebaseConfig";
 import {
-  collection,
-  doc,
-  updateDoc,
-  getDocs,
-  query,
-  where,
-  Timestamp,
-  getDoc,
-} from "firebase/firestore";
+  TextInput as PaperTextInput,
+  Text as PaperText,
+  IconButton,
+  RadioButton,
+} from "react-native-paper";
+import Button from "../components/Button"; // Custom Button component
+import { firestore, auth } from "../firebaseConfig"; // Firebase firestore болон auth-ийн холбоос
+import { doc, getDoc, collection, addDoc } from "firebase/firestore"; // Firestore-ийн үйлдлүүдийг импортлох
 
 const RevenueReportScreen = () => {
   const [shoeCode, setShoeCode] = useState("");
+  const [shoeSize, setShoeSize] = useState("");
+  const [shoePrice, setShoePrice] = useState("");
   const [shoeSoldPrice, setShoeSoldPrice] = useState("");
-  const [isTransaction, setIsTransaction] = useState(false);
-  const [isTransactionLeasing, setIsTransactionLeasing] = useState(false);
-  const [isTransactionLendpay, setIsTransactionLendpay] = useState(false);
-  const [isTransactionPocket, setIsTransactionPocket] = useState(false);
-  const [isTransactionStorepay, setIsTransactionStorepay] = useState(false);
-  const [locationSold, setLocationSold] = useState("");
-  const [soldUserID, setSoldUserID] = useState("");
-  const [soldShoes, setSoldShoes] = useState([]);
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Шууд төлөлт");
   const [totalSalesCount, setTotalSalesCount] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
-  const [user, setUser] = useState(null);
+  const [soldShoes, setSoldShoes] = useState([]);
 
-  const fetchUserData = async () => {
+  const handleUpdateShoe = async () => {
+    if (!shoeCode || !shoeSoldPrice || !buyerPhone) {
+      Alert.alert("Бүх талбарыг бөглөнө үү.");
+      return;
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+
     try {
-      const user = auth.currentUser;
-      if (user) {
-        const userDocRef = doc(firestore, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser(userData);
-          setSoldUserID(user.uid);
-          setLocationSold(userData.branch); // Assuming 'branch' is the field name in Firestore
-        } else {
-          Alert.alert("Хэрэглэгчийн мэдээлэл олдсонгүй.");
-        }
-      }
+      await addDoc(collection(firestore, "soldShoes"), {
+        shoeCode,
+        shoeSize,
+        shoePrice,
+        shoeSoldPrice,
+        buyerPhone,
+        paymentMethod,
+        date: today,
+      });
+
+      Alert.alert("Гутлын мэдээлэл шинэчлэгдсэн.");
+
+      setShoeCode("");
+      setShoeSize("");
+      setShoePrice("");
+      setShoeSoldPrice("");
+      setBuyerPhone("");
+      setPaymentMethod("Шууд төлөлт");
     } catch (error) {
-      console.error("Error fetching user data: ", error);
-      Alert.alert(
-        "Хэрэглэгчийн мэдээллийг татахад алдаа гарлаа: ",
-        error.message
-      );
+      console.error("Error updating shoe: ", error);
+      Alert.alert("Гутлын мэдээллийг шинэчлэхэд алдаа гарлаа.");
     }
   };
 
   const handleCheck = async () => {
-    try {
-      const shoeRef = collection(firestore, "shoes");
-      const e = query(shoeRef, where("shoeCode", "==", shoeCode));
-      const querySnapshot = await getDocs(e);
-      if (querySnapshot.empty) {
-        Alert.alert("Гутлын код олдсонгүй.");
-        return;
-      } else {
-        Alert.alert("Амжилттай");
-      }
-    } catch (e) {
-      Alert.alert("АЛДАА ГАРЛАА");
-    }
-  };
-
-  const handleUpdateShoe = async () => {
-    if (!shoeCode || !shoeSoldPrice) {
-      Alert.alert("Бүх мэдээллээ оруулна уу.");
+    if (!shoeCode) {
+      Alert.alert("Гутлын кодыг оруулна уу.");
       return;
     }
 
     try {
-      const shoeRef = collection(firestore, "shoes");
-      const q = query(shoeRef, where("shoeCode", "==", shoeCode));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
+      const shoeSnapshot = await getDoc(doc(firestore, "shoes", shoeCode));
+      console.log(shoeSnapshot);
+      if (!shoeSnapshot.exists()) {
         Alert.alert("Гутлын код олдсонгүй.");
         return;
       }
 
-      querySnapshot.forEach(async (doc) => {
-        await updateDoc(doc.ref, {
-          shoeSoldPrice,
-          isTransaction,
-          isTransactionLeasing,
-          isTransactionLendpay,
-          isTransactionPocket,
-          isTransactionStorepay,
-          locationSold,
-          shoeSoldDate: Timestamp.fromDate(new Date()),
-          soldUserID,
-        });
-      });
-
-      Alert.alert("Гутлын мэдээллийг амжилттай шинэчиллээ.");
-      setShoeCode("");
-      setShoeSoldPrice("");
-      setIsTransaction(false);
-      setIsTransactionLeasing(false);
-      setIsTransactionLendpay(false);
-      setIsTransactionPocket(false);
-      setIsTransactionStorepay(false);
-      setLocationSold("");
-      setSoldUserID("");
-      fetchSoldShoes(); // Refresh the sold shoes list
+      const shoeData = shoeSnapshot.data();
+      setShoeSize(shoeData.size);
+      setShoePrice(shoeData.price);
+      Alert.alert("Код шалгалаа.");
     } catch (error) {
-      Alert.alert("Мэдээллийг шинэчлэхэд алдаа гарлаа: ", error.message);
+      console.error("Error checking shoe code: ", error);
+      Alert.alert("Гутлын код шалгахад алдаа гарлаа.");
     }
   };
-
-  const fetchSoldShoes = async () => {
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-
-      const shoeRef = collection(firestore, "shoes");
-      const q = query(
-        shoeRef,
-        where("shoeSoldDate", ">=", Timestamp.fromDate(today)),
-        where("shoeSoldDate", "<", Timestamp.fromDate(tomorrow))
-      );
-      const querySnapshot = await getDocs(q);
-      const soldShoesList = [];
-      let totalAmount = 0;
-
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        soldShoesList.push(data);
-        totalAmount += parseFloat(data.shoeSoldPrice);
-      });
-
-      setSoldShoes(soldShoesList);
-      setTotalSalesCount(soldShoesList.length);
-      setTotalAmount(totalAmount);
-    } catch (error) {
-      Alert.alert("Мэдээллийг татахад алдаа гарлаа: ", error.message);
-    }
-  };
-
-  useEffect(() => {
-    fetchUserData();
-    fetchSoldShoes();
-  }, []);
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Гутлын код"
-        value={shoeCode}
-        onChangeText={setShoeCode}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Зарагдсан үнэ"
-        value={shoeSoldPrice}
-        onChangeText={setShoeSoldPrice}
-        keyboardType="numeric"
-      />
-      <Button title="Гутлын мэдээллийг шинэчлэх" onPress={handleUpdateShoe} />
+    <KeyboardAvoidingView
+      style={{ flex: 1, marginTop: "10%" }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.row}>
+          <PaperTextInput
+            style={styles.input}
+            placeholder="Гутлын код"
+            mode="outlined"
+            value={shoeCode}
+            onChangeText={setShoeCode}
+          />
+          <IconButton
+            icon="file"
+            size={35}
+            iconColor="#697565"
+            onPress={handleCheck}
+            mode="outlined"
+          />
+        </View>
 
-      <Button style={styles.button} title="Шалгах" onPress={handleCheck} />
-
-      <View style={styles.summary}>
-        <Text>Өнөөдрийн нийт зарсан гутлын тоо: {totalSalesCount}</Text>
-        <Text>Өнөөдрийн нийт үнийн дүн: {totalAmount}</Text>
-      </View>
-
-      <FlatList
-        data={soldShoes}
-        keyExtractor={(item) => item.shoeCode}
-        renderItem={({ item }) => (
-          <View style={styles.shoeItem}>
-            <Text>Гутлын код: {item.shoeCode}</Text>
-            <Text>Гутлын нэр: {item.shoeName}</Text>
-            <Text>Зарагдсан үнэ: {item.shoeSoldPrice}</Text>
+        {shoeSize && shoePrice ? (
+          <View style={styles.input}>
+            <PaperTextInput
+              style={styles.input}
+              placeholder="Размер"
+              value={shoeSize}
+              editable={false}
+            />
+            <PaperTextInput
+              style={styles.input}
+              placeholder="Үнийн дүн"
+              value={shoePrice}
+              editable={false}
+            />
           </View>
-        )}
-      />
-    </View>
+        ) : null}
+        <View>
+          <PaperTextInput
+            placeholder="Зарагдсан үнэ"
+            value={shoeSoldPrice}
+            onChangeText={setShoeSoldPrice}
+            mode="outlined"
+            keyboardType="numeric"
+            style={styles.input}
+          />
+        </View>
+        <View>
+          <PaperTextInput
+            placeholder="Худалдан авагчийн утасны дугаар"
+            value={buyerPhone}
+            mode="outlined"
+            onChangeText={setBuyerPhone}
+            keyboardType="phone-pad"
+            style={styles.input}
+          />
+        </View>
+        <View>
+          <PaperText style={styles.label}>Төлбөрийн арга:</PaperText>
+        </View>
+
+        <View style={styles.row}>
+          <RadioButton.Group
+            onValueChange={(value) => setPaymentMethod(value)}
+            value={paymentMethod}
+          >
+            <View style={styles.radio}>
+              <RadioButton value="Шууд төлөлт" />
+              <PaperText>Шууд төлөлт</PaperText>
+            </View>
+            <View style={styles.radio}>
+              <RadioButton value="Storepay" />
+              <PaperText>Storepay</PaperText>
+            </View>
+            <View style={styles.radio}>
+              <RadioButton value="Pocket" />
+              <PaperText>Pocket</PaperText>
+            </View>
+            <View style={styles.radio}>
+              <RadioButton value="Lend" />
+              <PaperText>Lend</PaperText>
+            </View>
+            <View style={styles.radio}>
+              <RadioButton value="Leasing" />
+              <PaperText>Leasing</PaperText>
+            </View>
+          </RadioButton.Group>
+        </View>
+
+        <Button
+          title="Гутлын мэдээллийг шинэчлэх"
+          onPress={handleUpdateShoe}
+          style={styles.button}
+        />
+
+        <View style={styles.summary}>
+          <PaperText>
+            Өнөөдрийн нийт зарсан гутлын тоо: {totalSalesCount}
+          </PaperText>
+          <PaperText>Өнөөдрийн нийт үнийн дүн: {totalAmount}</PaperText>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 16,
+    flexGrow: 1,
+    padding: 20,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
   },
   input: {
-    height: 40,
-    borderColor: "gray",
-    borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 8,
+    flex: 1,
+    margin: 10,
+    height: 50,
+  },
+  label: {
+    flex: 1,
+    marginLeft: 18,
+    margin: 10,
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  radio: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 4,
   },
   summary: {
-    marginVertical: 16,
+    marginTop: 20,
   },
   shoeItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    marginVertical: 10,
   },
   button: {
-    color: "red",
+    backgroundColor: "#CE5A67", // Товчлуурын өнгийг тохируулах
+    width: 150, // хүссэн хэмжээгээр өөрчлөх
+    alignSelf: "center", // төвд байрлуулах
   },
 });
 

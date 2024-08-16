@@ -8,7 +8,6 @@ import Header from "../components/Header";
 import Background from "../components/Background";
 import Button from "../components/Button";
 import TextInput from "../components/TextInput";
-import { theme } from "../core/theme";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");

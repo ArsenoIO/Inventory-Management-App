@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Button, Alert, StyleSheet } from "react-native";
+import { View, Text, Alert, StyleSheet } from "react-native";
 import { Avatar } from "react-native-paper";
 import { auth, firestore } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
+import Button from "../components/Button";
 
 const ProfileScreen = ({ navigation }) => {
   const [userData, setUserData] = useState(null);
@@ -59,11 +60,33 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Avatar.Icon size={100} icon="account" />
-      <Text style={styles.text}>Нэр: {userData.name}</Text>
-      <Text style={styles.text}>Бүртгэлтэй хаяг: {userData.email}</Text>
-      <Text style={styles.text}>Салбар: {userData.branch}</Text>
-      <Button title="Гарах" onPress={handleSignOut} />
+      <Avatar.Icon size={100} icon="account" style={styles.row} />
+
+      <View style={styles.row}>
+        <Text style={styles.label}>Нэр:</Text>
+        <Text style={styles.input}> {userData.name}</Text>
+      </View>
+
+      <View style={styles.row}>
+        <Text style={styles.label}>Бүртгэлтэй хаяг: </Text>
+        <Text style={styles.input}>{userData.email}</Text>
+      </View>
+
+      <View style={styles.row}>
+        <Text style={styles.label}>Салбар: </Text>
+
+        <Text style={styles.input}>{userData.branch}</Text>
+      </View>
+
+      <Button
+        mode="contained-tonal"
+        buttonColor="#CE5A67"
+        textColor="#FCF5ED"
+        icon="logout"
+        onPress={handleSignOut}
+      >
+        Гарах
+      </Button>
     </View>
   );
 };
@@ -71,13 +94,24 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "top",
+    alignItems: "left",
     padding: 20,
+    marginTop: "10%",
   },
-  text: {
-    fontSize: 18,
-    marginVertical: 10,
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 25,
+  },
+  label: {
+    width: "45%",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  input: {
+    fontSize: 20,
+    fontWeight: "light",
   },
 });
 
