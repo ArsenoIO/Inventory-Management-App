@@ -5,13 +5,13 @@ import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDzdriIgRGmrAMmbjh0ly4ExVe_t0YPyzA",
-  authDomain: "inventory-management-568f5.firebaseapp.com",
-  projectId: "inventory-management-568f5",
-  storageBucket: "inventory-management-568f5.appspot.com",
-  messagingSenderId: "231269817561",
-  appId: "1:231269817561:web:d92ed3431e8768a615b2c8",
-  measurementId: "G-KVW7HPK5Q6",
+  apiKey: "AIzaSyA7xJDURdp2EWPv9hdWN_3TTxBTqrhe4Pk",
+  authDomain: "inventorymanagementapp-8463c.firebaseapp.com",
+  projectId: "inventorymanagementapp-8463c",
+  storageBucket: "inventorymanagementapp-8463c.appspot.com",
+  messagingSenderId: "840030815794",
+  appId: "1:840030815794:web:c0afb9240298a7c6159e2b",
+  measurementId: "G-L0JXJNY2JV"
 };
 
 const app = initializeApp(firebaseConfig);

@@ -6,17 +6,18 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Text,
+  TextInput,
 } from "react-native";
 import { firestore, storage, auth } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { collection, addDoc, doc, getDoc, Timestamp } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import CustomButton from "../components/CustomButton";
-import Text from "../components/Text";
-import { TextInput as PaperTextInput } from "react-native-paper";
+import { TextInput as PaperTextInput, ProgressBar } from "react-native-paper";
 import CustomBackground from "../components/customBackground";
 import ModalSelector from "react-native-modal-selector";
-import { ProgressBar } from "react-native-paper";
+import NumberFormat from "react-number-format";
 
 const options = [
   { key: 1, label: "TMA" },
@@ -43,7 +44,7 @@ const AddShoeScreen = () => {
   const [addedUserID, setAddedUserID] = useState("");
   const [locationAdded, setLocationAdded] = useState("");
   const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false); // Нэмэлт: Уншилтын явцын төлөв
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -130,29 +131,36 @@ const AddShoeScreen = () => {
       Alert.alert("Гутлын код A00000 форматтай байх ёстой.");
       return;
     }
+
     const sizeNumber = parseInt(size, 10);
     if (sizeNumber < 34 || sizeNumber > 46) {
       Alert.alert("Гутлын размер зөвхөн 34-46 дотор байх ёстой.");
       return;
     }
 
+    const priceNumber = parseInt(price.replace(/,/g, ""), 10); // Оронгийн таслалыг арилгана
+    if (priceNumber < 500000 || priceNumber > 2500000) {
+      Alert.alert("Гутлын үнэ 500,000-2,500,000 дотор байх ёстой.");
+      return;
+    }
+
     try {
+      setLoading(true); // Нэмэлт: Уншилтын явцыг эхлүүлнэ
+
       const response = await fetch(selectedImage);
       const blob = await response.blob();
       const storageRef = ref(storage, `shoes/${shoeCode}.jpg`);
       await uploadBytes(storageRef, blob);
       const imageUrl = await getDownloadURL(storageRef);
 
-      const start = new Date().getTime();
       await addDoc(collection(firestore, "shoes"), {
         shoeName,
         shoeCode,
         size,
-        price,
+        price: priceNumber, // Оронгийн таслалгүй хадгалах
         imageUrl,
         shoeDateAdded: Timestamp.fromDate(new Date()), // Current timestamp
         addedUserID: userData ? userData.name : "",
-
         locationAdded: userData ? userData.branch : "",
         shoeSoldDate: null,
         shoeSoldPrice: null,
@@ -165,17 +173,18 @@ const AddShoeScreen = () => {
         buyerPhoneNumber: null,
         locationSold: null,
       });
-      const end = new Date().getTime();
-      setLoading(false); 
+
+      setLoading(false); // Нэмэлт: Уншилт дуусна
       Alert.alert("Гутал амжилттай нэмэгдлээ!");
-      console.log(`Өгөгдөл нэмэх хугацаа: ${end - start} ms`);
       setShoeName("");
       setShoeCode("");
       setSize("");
       setPrice("");
       setSelectedImage(null);
+      setAddedUserID("");
+      setLocationAdded("");
     } catch (error) {
-      setLoading(false); 
+      setLoading(false); // Нэмэлт: Алдаа гарвал уншилтыг зогсооно
       Alert.alert("Гутал нэмэхэд алдаа гарлаа: ", error.message);
       console.log(error.message);
     }
@@ -213,7 +222,7 @@ const AddShoeScreen = () => {
                 setShoeCode(text);
               }
             }}
-            maxLength={6}
+            maxLength={6} // Код 6 тэмдэгтээс ихгүй байх
             style={styles.inputOutlined}
           />
           <ModalSelector
@@ -230,7 +239,7 @@ const AddShoeScreen = () => {
             placeholder="34-44"
             returnKeyType="next"
             value={size}
-            /* onChangeText={(text) => {
+            onChangeText={(text) => {
               // 34-46 хооронд зөвшөөрөгдсөн утга
               if (/^\d{0,2}$/.test(text)) {
                 const number = parseInt(text, 10);
@@ -240,39 +249,34 @@ const AddShoeScreen = () => {
                   setSize(text);
                 }
               }
-            }}*/
-              onChangeText={setSize}
+            }}
             keyboardType="numeric"
-            style={styles.inputSecond}
+            style={styles.inputOutlined}
           />
         </View>
+
         <View style={styles.row}>
-          <Text style={styles.label}>Гутлын үнийн дүн:</Text>
-          <PaperTextInput
-            placeholder="Үнэ"
-            returnKeyType="enter"
+          <Text style={styles.label}>Гутлын үнэ:</Text>
+          <NumberFormat
             value={price}
-            onChangeText={setPrice}
-            keyboardType="numeric"
-            style={styles.inputSecond}
-          />
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Хэрэглэгч:</Text>
-          <PaperTextInput
-            value={addedUserID}
-            onChangeText={setAddedUserID}
-            style={styles.disabledInput}
-            editable={false}
-          />
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Бүртгэсэн хаяг:</Text>
-          <PaperTextInput
-            value={locationAdded}
-            onChangeText={setLocationAdded}
-            style={styles.disabledInput}
-            editable={false}
+            displayType={"text"}
+            thousandSeparator={true}
+            renderText={(formattedValue) => (
+              <PaperTextInput
+                placeholder="500,000-2,500,000"
+                returnKeyType="next"
+                value={formattedValue}
+                onChangeText={(text) => {
+                  // Оронгийн таслалыг арилгана
+                  const cleanValue = text.replace(/,/g, "");
+                  if (/^\d*$/.test(cleanValue)) {
+                    setPrice(cleanValue);
+                  }
+                }}
+                keyboardType="numeric"
+                style={styles.inputOutlined}
+              />
+            )}
           />
         </View>
 
@@ -290,7 +294,6 @@ const AddShoeScreen = () => {
         {loading && (
           <ProgressBar indeterminate color="#CE5A67" style={styles.progress} />
         )}
-
       </ScrollView>
     </CustomBackground>
   );
@@ -299,47 +302,27 @@ const AddShoeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 20,
-    marginTop: "10%",
-    justifyContent: "top",
+    paddingHorizontal: 16,
+    paddingVertical: 24,
   },
   row: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  label: {
-    width: "30%",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  input: {
-    width: "35%",
-    backgroundColor: "transparent",
-  },
-  inputSecond: {
-    width: "70%",
-    backgroundColor: "transparent",
+    marginBottom: 20,
   },
   image: {
     width: "100%",
     height: 200,
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  disabledInput: {
-    backgroundColor: "#F1F1F1",
-    width: "70%",
-  },
-  modalSelector: {
-    flex: 1,
-    backgroundColor: "transparent",
-    borderColor: "black",
-    height: 40,
+  label: {
+    fontSize: 16,
+    marginBottom: 8,
   },
   inputOutlined: {
-    width: "35%",
-    backgroundColor: "transparent",
-    height: 40,
+    backgroundColor: "#fff",
+  },
+  modalSelector: {
+    marginTop: 12,
+    backgroundColor: "#fff",
   },
   progress: {
     marginTop: 20,
