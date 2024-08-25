@@ -13,10 +13,9 @@ import { collection, addDoc, doc, getDoc, Timestamp } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import CustomButton from "../components/CustomButton";
 import Text from "../components/Text";
-import { TextInput as PaperTextInput } from "react-native-paper";
+import { TextInput as PaperTextInput, ProgressBar } from "react-native-paper";
 import CustomBackground from "../components/customBackground";
 import ModalSelector from "react-native-modal-selector";
-import { ProgressBar } from "react-native-paper";
 
 const options = [
   { key: 1, label: "TMA" },
@@ -43,7 +42,7 @@ const AddShoeScreen = () => {
   const [addedUserID, setAddedUserID] = useState("");
   const [locationAdded, setLocationAdded] = useState("");
   const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -83,9 +82,7 @@ const AddShoeScreen = () => {
     await requestPermission();
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
+      quality: 0.9,
     });
 
     if (!result.canceled) {
@@ -102,14 +99,16 @@ const AddShoeScreen = () => {
 
     let result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [3, 4],
-      quality: 1,
+      quality: 0.9,
     });
 
     if (!result.canceled) {
       setSelectedImage(result.assets[0].uri);
     }
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat("mn-MN").format(price);
   };
 
   const handleAddShoe = async () => {
@@ -136,23 +135,28 @@ const AddShoeScreen = () => {
       return;
     }
 
+    const priceNumber = parseInt(price.replace(/,/g, ""), 10);
+    if (priceNumber < 300 || priceNumber > 2500000) {
+      Alert.alert("Гутлын үнийн дүн 500,000 - 2,500,000 хооронд байх ёстой.");
+      return;
+    }
+
     try {
+      setLoading(true); // Уншилт эхлэхээс өмнө Loading төлөвийг true болгоно
       const response = await fetch(selectedImage);
       const blob = await response.blob();
       const storageRef = ref(storage, `shoes/${shoeCode}.jpg`);
       await uploadBytes(storageRef, blob);
       const imageUrl = await getDownloadURL(storageRef);
 
-      const start = new Date().getTime();
       await addDoc(collection(firestore, "shoes"), {
         shoeName,
         shoeCode,
         size,
-        price,
+        price: priceNumber,
         imageUrl,
         shoeDateAdded: Timestamp.fromDate(new Date()), // Current timestamp
         addedUserID: userData ? userData.name : "",
-
         locationAdded: userData ? userData.branch : "",
         shoeSoldDate: null,
         shoeSoldPrice: null,
@@ -165,19 +169,18 @@ const AddShoeScreen = () => {
         buyerPhoneNumber: null,
         locationSold: null,
       });
-      const end = new Date().getTime();
-      setLoading(false); 
+
       Alert.alert("Гутал амжилттай нэмэгдлээ!");
-      console.log(`Өгөгдөл нэмэх хугацаа: ${end - start} ms`);
       setShoeName("");
       setShoeCode("");
       setSize("");
       setPrice("");
       setSelectedImage(null);
     } catch (error) {
-      setLoading(false); 
       Alert.alert("Гутал нэмэхэд алдаа гарлаа: ", error.message);
       console.log(error.message);
+    } finally {
+      setLoading(false); // Уншилт дууссаны дараа Loading төлөвийг false болгоно
     }
   };
 
@@ -208,7 +211,6 @@ const AddShoeScreen = () => {
             mode="outlined"
             value={shoeCode}
             onChangeText={(text) => {
-              // Гутлын кодыг зөвхөн A үсэг болон 5 цифртэйгээр хязгаарлана
               if (/^A\d{0,5}$/.test(text)) {
                 setShoeCode(text);
               }
@@ -227,21 +229,15 @@ const AddShoeScreen = () => {
         <View style={styles.row}>
           <Text style={styles.label}>Гутлын размер:</Text>
           <PaperTextInput
-            placeholder="34-44"
+            placeholder="34-46"
             returnKeyType="next"
             value={size}
-            /* onChangeText={(text) => {
-              // 34-46 хооронд зөвшөөрөгдсөн утга
-              if (/^\d{0,2}$/.test(text)) {
-                const number = parseInt(text, 10);
-                if (number >= 34 && number <= 46) {
-                  setSize(text);
-                } else if (text === "") {
-                  setSize(text);
-                }
+            onChangeText={(text) => {
+              const number = parseInt(text, 10);
+              if (!isNaN(number) && number >= 1 && number <= 46) {
+                setSize(text);
               }
-            }}*/
-              onChangeText={setSize}
+            }}
             keyboardType="numeric"
             style={styles.inputSecond}
           />
@@ -249,9 +245,9 @@ const AddShoeScreen = () => {
         <View style={styles.row}>
           <Text style={styles.label}>Гутлын үнийн дүн:</Text>
           <PaperTextInput
-            placeholder="Үнэ"
+            placeholder="500000"
             returnKeyType="enter"
-            value={price}
+            value={formatPrice(price)}
             onChangeText={setPrice}
             keyboardType="numeric"
             style={styles.inputSecond}
@@ -281,7 +277,7 @@ const AddShoeScreen = () => {
             mode="contained"
             icon="plus-circle"
             onPress={handleAddShoe}
-            disabled={loading} // Нэмэлт: Уншилтын үед идэвхгүй болно
+            disabled={loading} // Уншилтын үед идэвхгүй болно
           >
             Гутал нэмэх
           </CustomButton>
@@ -290,7 +286,6 @@ const AddShoeScreen = () => {
         {loading && (
           <ProgressBar indeterminate color="#CE5A67" style={styles.progress} />
         )}
-
       </ScrollView>
     </CustomBackground>
   );
@@ -312,10 +307,6 @@ const styles = StyleSheet.create({
     width: "30%",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  input: {
-    width: "35%",
-    backgroundColor: "transparent",
   },
   inputSecond: {
     width: "70%",

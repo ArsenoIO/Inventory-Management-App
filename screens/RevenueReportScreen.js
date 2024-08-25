@@ -15,7 +15,7 @@ import {
 } from "react-native-paper";
 import Button from "../components/Button"; // Custom Button component
 import { firestore, auth } from "../firebaseConfig"; // Firebase firestore болон auth-ийн холбоос
-import { doc, getDoc, collection, addDoc } from "firebase/firestore"; // Firestore-ийн үйлдлүүдийг импортлох
+import { doc, getDoc, collection, updateDoc, query, where, getDocs } from "firebase/firestore"; // Firestore-ийн үйлдлүүдийг импортлох
 
 const RevenueReportScreen = () => {
   const [shoeCode, setShoeCode] = useState("");
@@ -27,6 +27,26 @@ const RevenueReportScreen = () => {
   const [totalSalesCount, setTotalSalesCount] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [soldShoes, setSoldShoes] = useState([]);
+  const [userData, setUserData] = useState(null);
+  const [documentId, setDocumentId] = useState(""); // Шинэ утга оруулах эсэхийг тодорхойлох
+
+  // Нэвтэрсэн хэрэглэгчийн мэдээллийг татаж авах
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(firestore, "users", user.uid));
+          if (userDoc.exists()) {
+            setUserData(userDoc.data());
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data: ", error);
+      }
+    };
+    fetchUserData();
+  }, []);
 
   const handleUpdateShoe = async () => {
     if (!shoeCode || !shoeSoldPrice || !buyerPhone) {
@@ -34,17 +54,25 @@ const RevenueReportScreen = () => {
       return;
     }
 
-    const today = new Date().toISOString().split("T")[0];
-
     try {
-      await addDoc(collection(firestore, "soldShoes"), {
-        shoeCode,
-        shoeSize,
-        shoePrice,
+      if (!documentId) {
+        Alert.alert("Гутлын код шалгаж, мэдээллийг бүрэн бөглөнө үү.");
+        return;
+      }
+
+      const shoeRef = doc(firestore, "shoes", documentId);
+
+      await updateDoc(shoeRef, {
         shoeSoldPrice,
         buyerPhone,
         paymentMethod,
-        date: today,
+        shoeSoldDate: new Date(),
+        soldUserID: userData ? userData.name : "",
+        isTransaction: paymentMethod === "Шууд төлөлт",
+        isTransactionStorepay: paymentMethod === "Storepay",
+        isTransactionPocket: paymentMethod === "Pocket",
+        isTransactionLendpay: paymentMethod === "Lend",
+        isTransactionLeesing: paymentMethod === "Leasing",
       });
 
       Alert.alert("Гутлын мэдээлэл шинэчлэгдсэн.");
@@ -55,6 +83,9 @@ const RevenueReportScreen = () => {
       setShoeSoldPrice("");
       setBuyerPhone("");
       setPaymentMethod("Шууд төлөлт");
+      setDocumentId(""); // Шинэ гутал нэмэх боломжтой болгоно
+
+      fetchSoldShoes(); // Зарагдсан гутлын жагсаалтыг шинэчлэх
     } catch (error) {
       console.error("Error updating shoe: ", error);
       Alert.alert("Гутлын мэдээллийг шинэчлэхэд алдаа гарлаа.");
@@ -66,24 +97,61 @@ const RevenueReportScreen = () => {
       Alert.alert("Гутлын кодыг оруулна уу.");
       return;
     }
-
-    try {
-      const shoeSnapshot = await getDoc(doc(firestore, "shoes", shoeCode));
-      console.log(shoeSnapshot);
-      if (!shoeSnapshot.exists()) {
-        Alert.alert("Гутлын код олдсонгүй.");
-        return;
-      }
-
-      const shoeData = shoeSnapshot.data();
-      setShoeSize(shoeData.size);
-      setShoePrice(shoeData.price);
-      Alert.alert("Код шалгалаа.");
-    } catch (error) {
-      console.error("Error checking shoe code: ", error);
-      Alert.alert("Гутлын код шалгахад алдаа гарлаа.");
+  
+    const shoesRef = collection(firestore, "shoes");
+    const q = query(shoesRef, where("shoeCode", "==", shoeCode));
+    const querySnapshot = await getDocs(q);
+  
+    if (querySnapshot.empty) {
+      Alert.alert("Гутлын код олдсонгүй.");
+    } else {
+      querySnapshot.forEach((doc) => {
+        const shoeData = doc.data();
+        setShoeSize(shoeData.size);
+        setShoePrice(shoeData.price);
+        setDocumentId(doc.id); // Шалгасан баримтын ID-г хадгална
+        Alert.alert("Код шалгалаа.");
+      });
     }
   };
+
+  // Өнөөдрийн зарагдсан гутлуудыг татах функц
+  const fetchSoldShoes = async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Өнөөдөр өглөөний 00:00 цаг
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1); // Маргаашийн 00:00 цаг
+
+      const shoeRef = collection(firestore, "shoes");
+      const q = query(
+        shoeRef,
+        where("shoeSoldDate", ">=", today),
+        where("shoeSoldDate", "<", tomorrow)
+      );
+      const querySnapshot = await getDocs(q);
+
+      const soldShoesList = [];
+      let totalAmount = 0;
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        soldShoesList.push(data);
+        totalAmount += parseFloat(data.shoeSoldPrice || 0);
+      });
+
+      setSoldShoes(soldShoesList);
+      setTotalSalesCount(soldShoesList.length);
+      setTotalAmount(totalAmount);
+    } catch (error) {
+      console.error("Error fetching sold shoes: ", error);
+      Alert.alert("Зарагдсан гутлын мэдээллийг татахад алдаа гарлаа.");
+    }
+  };
+
+  useEffect(() => {
+    fetchSoldShoes(); // Экран ачаалахад зарагдсан гутлуудыг татах
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -100,7 +168,7 @@ const RevenueReportScreen = () => {
             onChangeText={setShoeCode}
           />
           <IconButton
-            icon="file"
+            icon="magnify"
             size={35}
             iconColor="#697565"
             onPress={handleCheck}
@@ -188,6 +256,17 @@ const RevenueReportScreen = () => {
           </PaperText>
           <PaperText>Өнөөдрийн нийт үнийн дүн: {totalAmount}</PaperText>
         </View>
+
+        {soldShoes.map((shoe, index) => (
+          <View key={index} style={styles.shoeItem}>
+            <PaperText>Гутлын код: {shoe.shoeCode}</PaperText>
+            <PaperText>Размер: {shoe.size}</PaperText>
+            <PaperText>Үндсэн үнэ: {shoe.price}</PaperText>
+            <PaperText>Зарагдсан үнэ: {shoe.shoeSoldPrice}</PaperText>
+            <PaperText>Худалдан авагчийн утас: {shoe.buyerPhone}</PaperText>
+            <PaperText>Төлбөрийн хэлбэр: {shoe.paymentMethod}</PaperText>
+          </View>
+        ))}
       </ScrollView>
     </KeyboardAvoidingView>
   );
