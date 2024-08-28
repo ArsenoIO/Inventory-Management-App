@@ -4,20 +4,21 @@ import HomeScreen from "../screens/HomeScreen";
 import AddShoeScreen from "../screens/AddShoeScreen";
 import RevenueReportScreen from "../screens/RevenueReportScreen";
 import AccountScreen from "../screens/AccountScreen";
+import New from "../screens/new";
 
 const BottomNav = () => {
   const [index, setIndex] = React.useState(0);
   const [routes] = React.useState([
-    { key: "home", title: "Эхлэл", focusedIcon: "home" },
-    { key: "addShoe", title: "Бүртгэл", focusedIcon: "plus-box" },
-    { key: "revenue", title: "Орлого", focusedIcon: "file-plus" },
-    { key: "account", title: "Хэрэглэгч", focusedIcon: "account" },
+    { key: "home", title: "Эхлэл", focusedIcon: "home-outline" },
+    { key: "addShoe", title: "Бүртгэл", focusedIcon: "plus-box-outline" },
+    { key: "revenue", title: "Орлого", focusedIcon: "file-plus-outline" },
+    { key: "account", title: "Хэрэглэгч", focusedIcon: "account-outline" },
   ]);
 
   const renderScene = ({ route }) => {
     switch (route.key) {
       case "home":
-        return <HomeScreen />;
+        return <New />;
       case "addShoe":
         return <AddShoeScreen />;
       case "revenue":

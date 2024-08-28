@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { firestore, storage, auth } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { collection, addDoc, doc, getDoc, Timestamp } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc,setDoc, Timestamp } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import CustomButton from "../components/CustomButton";
 import Text from "../components/Text";
@@ -56,7 +56,7 @@ const AddShoeScreen = () => {
             setAddedUserID(userData.name);
             setLocationAdded(userData.branch);
           } else {
-            console.log("No such document!");
+            console.log("No such document! Printing addshoeScreem from");
           }
         } else {
           console.log("No user is logged in!");
@@ -70,7 +70,7 @@ const AddShoeScreen = () => {
 
   const requestPermission = async () => {
     if (Platform.OS !== "web") {
-      const { status } =
+      const { status }= { }
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         alert("Permission to access media library is required!");
@@ -149,13 +149,13 @@ const AddShoeScreen = () => {
       await uploadBytes(storageRef, blob);
       const imageUrl = await getDownloadURL(storageRef);
 
-      await addDoc(collection(firestore, "shoes"), {
+      await setDoc(doc(firestore, "shoes", shoeCode), {
         shoeName,
         shoeCode,
         size,
         price: priceNumber,
         imageUrl,
-        shoeDateAdded: Timestamp.fromDate(new Date()), // Current timestamp
+        shoeDateAdded: Timestamp.fromDate(new Date()),
         addedUserID: userData ? userData.name : "",
         locationAdded: userData ? userData.branch : "",
         shoeSoldDate: null,
@@ -169,6 +169,7 @@ const AddShoeScreen = () => {
         buyerPhoneNumber: null,
         locationSold: null,
       });
+
 
       Alert.alert("Гутал амжилттай нэмэгдлээ!");
       setShoeName("");
@@ -301,12 +302,13 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 17,
   },
   label: {
     width: "30%",
     fontSize: 16,
     fontWeight: "bold",
+    color: "#2F4F4F",
   },
   inputSecond: {
     width: "70%",

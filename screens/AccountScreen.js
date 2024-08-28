@@ -5,6 +5,7 @@ import { auth, firestore } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import Button from "../components/Button";
+import CustomButton from "../components/CustomButton";
 
 const ProfileScreen = ({ navigation }) => {
   const [userData, setUserData] = useState(null);
@@ -78,15 +79,14 @@ const ProfileScreen = ({ navigation }) => {
         <Text style={styles.input}>{userData.branch}</Text>
       </View>
 
-      <Button
-        mode="contained-tonal"
-        buttonColor="#CE5A67"
+      <CustomButton
+        mode="exit"
         textColor="#FCF5ED"
         icon="logout"
         onPress={handleSignOut}
       >
         Гарах
-      </Button>
+      </CustomButton>
     </View>
   );
 };

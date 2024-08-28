@@ -13,9 +13,9 @@ import {
   IconButton,
   RadioButton,
 } from "react-native-paper";
-import Button from "../components/Button"; // Custom Button component
 import { firestore, auth } from "../firebaseConfig"; // Firebase firestore болон auth-ийн холбоос
 import { doc, getDoc, collection, updateDoc, query, where, getDocs } from "firebase/firestore"; // Firestore-ийн үйлдлүүдийг импортлох
+import CustomButton from "../components/CustomButton";
 
 const RevenueReportScreen = () => {
   const [shoeCode, setShoeCode] = useState("");
@@ -244,11 +244,14 @@ const RevenueReportScreen = () => {
           </RadioButton.Group>
         </View>
 
-        <Button
+        <CustomButton
           title="Гутлын мэдээллийг шинэчлэх"
+          mode="contained"
           onPress={handleUpdateShoe}
           style={styles.button}
-        />
+        >
+          Орлого нэмэх
+        </CustomButton>
 
         <View style={styles.summary}>
           <PaperText>
@@ -305,11 +308,6 @@ const styles = StyleSheet.create({
   },
   shoeItem: {
     marginVertical: 10,
-  },
-  button: {
-    backgroundColor: "#CE5A67", // Товчлуурын өнгийг тохируулах
-    width: 150, // хүссэн хэмжээгээр өөрчлөх
-    alignSelf: "center", // төвд байрлуулах
   },
 });
 

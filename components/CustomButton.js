@@ -1,20 +1,32 @@
 import React from "react";
-import { StyleSheet } from "react-native";
 import { Button as PaperButton } from "react-native-paper";
-import { theme } from "../core/theme";
+import { StyleSheet } from "react-native";
 
 export default function CustomButton({ mode, style, ...props }) {
+  // Determine the color based on the mode
+  const buttonColor = (() => {
+    switch (mode) {
+      case "outlined":
+        return "#D3D3D3"; // Blue color for outlined
+      case "contained":
+        return "#F6A609"; // Red color for contained
+      case "elevated":
+        return "#FFFFFF"; // Purple color for elevated
+      case "text":
+        return "#2F4F4F"; // Lighter blue for text
+        case "exit":
+          return "#973131";
+      default:
+        return undefined; // Default color
+    }
+  })();
+
   return (
     <PaperButton
-      style={[
-        styles.button,
-        mode === "outlined" && {
-          backgroundColor: theme.colors.primary,
-        },
-        style,
-      ]}
+      style={[styles.button, style]}
       labelStyle={styles.text}
       mode={mode}
+      buttonColor={buttonColor}
       {...props}
     />
   );
