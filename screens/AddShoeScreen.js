@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { firestore, storage, auth } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { collection, addDoc, doc, getDoc,setDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc,setDoc, Timestamp } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import CustomButton from "../components/CustomButton";
 import Text from "../components/Text";
@@ -40,7 +40,7 @@ const AddShoeScreen = () => {
   const [size, setSize] = useState("");
   const [price, setPrice] = useState("");
   const [addedUserID, setAddedUserID] = useState("");
-  const [locationAdded, setLocationAdded] = useState("");
+  const [addedBranch, setAddedBranch] = useState("");
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -53,8 +53,8 @@ const AddShoeScreen = () => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setUserData(userData);
-            setAddedUserID(userData.name);
-            setLocationAdded(userData.branch);
+            setAddedUserID(userData.userName);
+            setAddedBranch(userData.branch);
           } else {
             console.log("No such document! Printing addshoeScreem from");
           }
@@ -119,7 +119,7 @@ const AddShoeScreen = () => {
       !price ||
       !selectedImage ||
       !addedUserID ||
-      !locationAdded
+      !addedBranch
     ) {
       Alert.alert("Бүх мэдээллээ оруулна уу.");
       return;
@@ -142,7 +142,7 @@ const AddShoeScreen = () => {
     }
 
     try {
-      setLoading(true); // Уншилт эхлэхээс өмнө Loading төлөвийг true болгоно
+      setLoading(true); 
       const response = await fetch(selectedImage);
       const blob = await response.blob();
       const storageRef = ref(storage, `shoes/${shoeCode}.jpg`);
@@ -151,25 +151,20 @@ const AddShoeScreen = () => {
 
       await setDoc(doc(firestore, "shoes", shoeCode), {
         shoeName,
-        shoeCode,
-        size,
-        price: priceNumber,
-        imageUrl,
-        shoeDateAdded: Timestamp.fromDate(new Date()),
-        addedUserID: userData ? userData.name : "",
-        locationAdded: userData ? userData.branch : "",
-        shoeSoldDate: null,
-        shoeSoldPrice: null,
-        isTransaction: null,
-        isTransactionStorepay: null,
-        isTransactionPocket: null,
-        isTransactionLendpay: null,
-        isTransactionLeesing: null,
-        soldUserID: null,
-        buyerPhoneNumber: null,
-        locationSold: null,
+        shoePrice: priceNumber,
+        shoeSize: sizeNumber,
+        addedDate: Timestamp.fromDate(new Date()), 
+        ImageUrl: imageUrl, 
+        addedUserID: userData ? userData.userName : "", 
+        addedBranch: userData ? userData.branch : "", 
+        isSold: false, 
+        transactionMethod: "", 
+        soldUserID: "", 
+        buyerPhoneNumber: "", 
+        soldBranch: "", 
+        soldDate: null, 
+        soldPrice: null, 
       });
-
 
       Alert.alert("Гутал амжилттай нэмэгдлээ!");
       setShoeName("");
@@ -181,9 +176,10 @@ const AddShoeScreen = () => {
       Alert.alert("Гутал нэмэхэд алдаа гарлаа: ", error.message);
       console.log(error.message);
     } finally {
-      setLoading(false); // Уншилт дууссаны дараа Loading төлөвийг false болгоно
+      setLoading(false); 
     }
   };
+
 
   return (
     <CustomBackground>
@@ -266,8 +262,8 @@ const AddShoeScreen = () => {
         <View style={styles.row}>
           <Text style={styles.label}>Бүртгэсэн хаяг:</Text>
           <PaperTextInput
-            value={locationAdded}
-            onChangeText={setLocationAdded}
+            value={addedBranch}
+            onChangeText={setAddedBranch}
             style={styles.disabledInput}
             editable={false}
           />

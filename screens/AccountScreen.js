@@ -4,7 +4,6 @@ import { Avatar } from "react-native-paper";
 import { auth, firestore } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import Button from "../components/Button";
 import CustomButton from "../components/CustomButton";
 
 const ProfileScreen = ({ navigation }) => {
@@ -44,8 +43,12 @@ const ProfileScreen = ({ navigation }) => {
       {
         text: "Гарах",
         onPress: async () => {
-          await signOut(auth);
-          navigation.replace("SignInScreen");
+          try {
+            await signOut(auth);
+            navigation.replace("SignIn"); // 'replace' ашиглан хуудсыг солих
+          } catch (error) {
+            console.error("Sign out error: ", error);
+          }
         },
       },
     ]);
@@ -65,7 +68,7 @@ const ProfileScreen = ({ navigation }) => {
 
       <View style={styles.row}>
         <Text style={styles.label}>Нэр:</Text>
-        <Text style={styles.input}> {userData.name}</Text>
+        <Text style={styles.input}> {userData.userName}</Text>
       </View>
 
       <View style={styles.row}>

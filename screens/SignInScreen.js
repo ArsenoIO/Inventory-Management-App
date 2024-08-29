@@ -1,6 +1,6 @@
 // SignInScreen.js
 import React, { useState } from "react";
-import { View, StyleSheet, Image, Text, Alert } from "react-native";
+import { StyleSheet, Image, Alert } from "react-native";
 import { auth } from "../firebaseConfig";
 import { useNavigation } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from "firebase/auth";

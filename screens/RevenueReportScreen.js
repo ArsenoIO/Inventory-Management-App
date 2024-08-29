@@ -29,7 +29,7 @@ const RevenueReportScreen = () => {
   const [soldShoes, setSoldShoes] = useState([]);
   const [userData, setUserData] = useState(null);
   const [documentId, setDocumentId] = useState(""); // Шинэ утга оруулах эсэхийг тодорхойлох
-
+const [shoeId, setShoeId ] = useState("");
   // Нэвтэрсэн хэрэглэгчийн мэдээллийг татаж авах
   useEffect(() => {
     const fetchUserData = async () => {
@@ -53,44 +53,42 @@ const RevenueReportScreen = () => {
       Alert.alert("Бүх талбарыг бөглөнө үү.");
       return;
     }
-
+  
     try {
       if (!documentId) {
         Alert.alert("Гутлын код шалгаж, мэдээллийг бүрэн бөглөнө үү.");
         return;
       }
-
+  
       const shoeRef = doc(firestore, "shoes", documentId);
 
       await updateDoc(shoeRef, {
-        shoeSoldPrice,
-        buyerPhone,
-        paymentMethod,
-        shoeSoldDate: new Date(),
-        soldUserID: userData ? userData.name : "",
-        isTransaction: paymentMethod === "Шууд төлөлт",
-        isTransactionStorepay: paymentMethod === "Storepay",
-        isTransactionPocket: paymentMethod === "Pocket",
-        isTransactionLendpay: paymentMethod === "Lend",
-        isTransactionLeesing: paymentMethod === "Leasing",
+        soldPrice: shoeSoldPrice,
+        buyerPhoneNumber: buyerPhone,
+        transactionMethod: paymentMethod,
+        soldDate: new Date(),
+        soldUserID: userData ? userData.userName : "",
+        soldBranch: userData ? userData.branch : "",
+        isSold: true,
       });
-
+  
       Alert.alert("Гутлын мэдээлэл шинэчлэгдсэн.");
-
+  
       setShoeCode("");
       setShoeSize("");
       setShoePrice("");
       setShoeSoldPrice("");
       setBuyerPhone("");
       setPaymentMethod("Шууд төлөлт");
-      setDocumentId(""); // Шинэ гутал нэмэх боломжтой болгоно
-
-      fetchSoldShoes(); // Зарагдсан гутлын жагсаалтыг шинэчлэх
+      setDocumentId(""); 
+  
+      fetchSoldShoes(); 
     } catch (error) {
       console.error("Error updating shoe: ", error);
       Alert.alert("Гутлын мэдээллийг шинэчлэхэд алдаа гарлаа.");
     }
   };
+  
 
   const handleCheck = async () => {
     if (!shoeCode) {
@@ -98,22 +96,29 @@ const RevenueReportScreen = () => {
       return;
     }
   
-    const shoesRef = collection(firestore, "shoes");
-    const q = query(shoesRef, where("shoeCode", "==", shoeCode));
-    const querySnapshot = await getDocs(q);
-  
-    if (querySnapshot.empty) {
-      Alert.alert("Гутлын код олдсонгүй.");
-    } else {
-      querySnapshot.forEach((doc) => {
-        const shoeData = doc.data();
-        setShoeSize(shoeData.size);
-        setShoePrice(shoeData.price);
-        setDocumentId(doc.id); // Шалгасан баримтын ID-г хадгална
+    try {
+      // Баримтын ID-гаар шууд Firestore-оос баримт авах
+      const shoeRef = doc(firestore, "shoes", shoeCode);
+      const shoeDoc = await getDoc(shoeRef);
+      
+      if (!shoeDoc.exists()) {
+        Alert.alert("Гутлын код олдсонгүй.");
+      } else {
+        const shoeData = shoeDoc.data();
+        setShoeSize(shoeData.shoeSize);
+        setShoePrice(shoeData.shoePrice);
+        setDocumentId(shoeDoc.id); // Баримтын ID-г хадгална
+        setShoeId(shoeDoc.id);
         Alert.alert("Код шалгалаа.");
-      });
+        console.log(shoeDoc.id);console.log(shoePrice);
+      }
+    } catch (error) {
+      console.error("Error checking shoe code: ", error);
+      Alert.alert("Гутлын код шалгах явцад алдаа гарлаа.");
     }
   };
+  
+  
 
   // Өнөөдрийн зарагдсан гутлуудыг татах функц
   const fetchSoldShoes = async () => {
@@ -122,24 +127,25 @@ const RevenueReportScreen = () => {
       today.setHours(0, 0, 0, 0); // Өнөөдөр өглөөний 00:00 цаг
       const tomorrow = new Date(today);
       tomorrow.setDate(today.getDate() + 1); // Маргаашийн 00:00 цаг
-
+  
       const shoeRef = collection(firestore, "shoes");
       const q = query(
         shoeRef,
-        where("shoeSoldDate", ">=", today),
-        where("shoeSoldDate", "<", tomorrow)
+        where("soldDate", ">=", today),
+        where("soldDate", "<", tomorrow),
+        where("isSold", "==", true) // Зарагдсан гутлуудыг шүүх
       );
       const querySnapshot = await getDocs(q);
-
+  
       const soldShoesList = [];
       let totalAmount = 0;
-
+  
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         soldShoesList.push(data);
-        totalAmount += parseFloat(data.shoeSoldPrice || 0);
+        totalAmount += parseFloat(data.soldPrice || 0);
       });
-
+  
       setSoldShoes(soldShoesList);
       setTotalSalesCount(soldShoesList.length);
       setTotalAmount(totalAmount);
@@ -148,6 +154,7 @@ const RevenueReportScreen = () => {
       Alert.alert("Зарагдсан гутлын мэдээллийг татахад алдаа гарлаа.");
     }
   };
+  
 
   useEffect(() => {
     fetchSoldShoes(); // Экран ачаалахад зарагдсан гутлуудыг татах
@@ -182,6 +189,7 @@ const RevenueReportScreen = () => {
               style={styles.input}
               placeholder="Размер"
               value={shoeSize}
+              marginBottom={10}
               editable={false}
             />
             <PaperTextInput
@@ -262,12 +270,12 @@ const RevenueReportScreen = () => {
 
         {soldShoes.map((shoe, index) => (
           <View key={index} style={styles.shoeItem}>
-            <PaperText>Гутлын код: {shoe.shoeCode}</PaperText>
-            <PaperText>Размер: {shoe.size}</PaperText>
-            <PaperText>Үндсэн үнэ: {shoe.price}</PaperText>
-            <PaperText>Зарагдсан үнэ: {shoe.shoeSoldPrice}</PaperText>
-            <PaperText>Худалдан авагчийн утас: {shoe.buyerPhone}</PaperText>
-            <PaperText>Төлбөрийн хэлбэр: {shoe.paymentMethod}</PaperText>
+            <PaperText>Гутлын код: {shoe.shoeId}</PaperText>
+            <PaperText>Размер: {shoe.shoeSize}</PaperText>
+            <PaperText>Үндсэн үнэ: {shoe.shoePrice}</PaperText>
+            <PaperText>Зарагдсан үнэ: {shoe.soldPrice}</PaperText>
+            <PaperText>Худалдан авагчийн утас: {shoe.buyerPhoneNumber}</PaperText>
+            <PaperText>Төлбөрийн хэлбэр: {shoe.transactionMethod}</PaperText>
           </View>
         ))}
       </ScrollView>

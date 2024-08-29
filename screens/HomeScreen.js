@@ -2,10 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { firestore, auth } from "../firebaseConfig";
 import { collection, query, where, getDocs,getDoc, doc } from "firebase/firestore";
-
-import VictoryChart from "victory-native";
-import VictoryBar from "victory-native";
-import VictoryAxis from "victory-native";
+import { Card, Title, Paragraph } from "react-native-paper";
 
 const HomeScreen = () => {
   const [userData, setUserData] = useState(null);
@@ -54,30 +51,6 @@ const HomeScreen = () => {
     fetchRegisteredShoeCount();
   }, [userData]);
 
-  // Зарагдсан гутлын тоог сараар
-  useEffect(() => {
-    const fetchSoldShoeCount = async () => {
-      if (userData && userData.branch) {
-        const shoeRef = collection(firestore, "shoes");
-        const q = query(shoeRef, where("locationSold", "==", userData.branch));
-        const querySnapshot = await getDocs(q);
-
-        const soldShoesList = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          soldShoesList.push({
-            x: data.shoeSoldDate.toDate().toLocaleDateString("mn-MN", { month: "short", year: "numeric" }),
-            y: data.shoeSoldPrice,
-          });
-        });
-        setChartData(soldShoesList);
-        setSoldShoeCount(querySnapshot.size);
-      }
-    };
-    fetchSoldShoeCount();
-  }, [userData]);
-
-
   if (loading) {
     return <Text>Ачааллаж байна...</Text>;
   }
@@ -88,15 +61,59 @@ const HomeScreen = () => {
         {userData ? userData.branch : "САЛБАР"}
       </Text>
       <View style={styles.row}>
-        <Text style={styles.row}>
-          Бүртгэгдсэн гутлын тоо: {registeredShoeCount}
+        <Text >
+          Нийт бүртгэгдсэн гутал:
+          <Text style={[styles.metric, { color: "#059212",fontSize: 15 }]}> {registeredShoeCount}</Text>
         </Text>
-        <Text style={styles.row}>
-          Зарагдсан гутлын тоо: {soldShoeCount}
+        
+        <Text >
+          Нийт зарагдсан гутал:
+          <Text style={[styles.metric, { color: "#26355D", fontSize: 15 }]}> {soldShoeCount}</Text>
         </Text>
       </View>
       
-     
+      <Card style={styles.card}>
+        <Card.Content>
+          <Title style={styles.cardTitle}>Борлуулалт</Title>
+          <Paragraph style={styles.cardSubtitle}>(ТӨВ САЛБАР)</Paragraph>
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.card}>
+        <Card.Content>
+          <Title style={styles.cardTitle}>Борлуулалт</Title>
+          <Paragraph style={styles.cardSubtitle}>(ӨВӨРХАНГАЙ)</Paragraph>
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.card}>
+        <Card.Content>
+          <Title style={styles.cardTitle}>Борлуулалт</Title>
+          <Paragraph style={styles.cardSubtitle}>(АЛТЖИН БӨМБӨГӨР)</Paragraph>
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.card}>
+        <Card.Content>
+          <Title style={styles.cardTitle}>Орлого /7 хоногоор/</Title>
+          <Paragraph style={styles.cardSubtitle}>(ТӨВ САЛБАР)</Paragraph>
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.card}>
+        <Card.Content>
+          <Title style={styles.cardTitle}>Орлого /7 хоногоор/</Title>
+          <Paragraph style={styles.cardSubtitle}>(ӨВӨРХАНГАЙ)</Paragraph>
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.card}>
+        <Card.Content>
+          <Title style={styles.cardTitle}>Орлого /7 хоногоор/</Title>
+          <Paragraph style={styles.cardSubtitle}>(АЛТЖИН БӨМБӨГӨР)</Paragraph>
+        </Card.Content>
+      </Card>
+      
     </ScrollView>
   );
 };
@@ -106,14 +123,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     justifyContent: "center",
-  },
-  graphic: {
-    flexDirection: 1,
-    justifyContent: "bold",
-    textAlign: "cemter",
-    marginBottom: 100,
-    fontSize: 17,
-    fontWeight: "bold",
+    marginTop: "10%",
   },
   branchName: {
     fontSize: 24,
@@ -127,8 +137,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   metric: {
-    fontSize: 18,
+    fontSize: 13,
     fontWeight: "bold",
+  },
+  card: {
+    marginBottom: 20,
+    backgroundColor: "#F5F7F8",  // Customize card background color if needed
+    height: 350,
+  },
+  cardTitle: {
+    fontSize: 18,
+    color: "#45474B", // Custom color for card title
+    fontWeight: "bold",
+  },
+  cardSubtitle: {
+    fontSize: 11,
+    color: "#919191", // Custom color for card subtitle
   },
 });
 
