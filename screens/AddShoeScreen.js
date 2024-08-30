@@ -6,16 +6,56 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Modal,
 } from "react-native";
 import { firestore, storage, auth } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { doc, getDoc,setDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore"; // getDocs функц нэмэх
 import * as ImagePicker from "expo-image-picker";
 import CustomButton from "../components/CustomButton";
 import Text from "../components/Text";
-import { TextInput as PaperTextInput, ProgressBar } from "react-native-paper";
+import {
+  TextInput as PaperTextInput,
+  ProgressBar,
+  DataTable,
+} from "react-native-paper";
 import CustomBackground from "../components/customBackground";
 import ModalSelector from "react-native-modal-selector";
+
+const EditModal = ({ visible, onClose, onEdit, onDelete }) => {
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Мэдээллийг шинэчлэх</Text>
+          <CustomButton
+            mode="contained"
+            onPress={onEdit}
+            style={styles.modalButton}
+          >
+            Засварлах
+          </CustomButton>
+          <CustomButton
+            mode="contained"
+            onPress={onDelete}
+            style={styles.modalButton}
+          >
+            Устгах
+          </CustomButton>
+          <CustomButton mode="text" onPress={onClose}>
+            Болих
+          </CustomButton>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 const options = [
   { key: 1, label: "TMA" },
@@ -43,6 +83,29 @@ const AddShoeScreen = () => {
   const [addedBranch, setAddedBranch] = useState("");
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [shoesList, setShoesList] = useState([]); // Бүх гутлын мэдээллийг хадгалах төлөв
+  const [selectedShoe, setSelectedShoe] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleLongPress = (shoe) => {
+    setSelectedShoe(shoe);
+    setModalVisible(true);
+  };
+
+  const handleEdit = () => {
+    setModalVisible(false);
+    // Засварлах үйлдлийг энд нэмэх
+    Alert.alert(
+      "Засварлах үйлдэл",
+      `Гутал засварлах: ${selectedShoe.shoeCode}`
+    );
+  };
+
+  const handleDelete = () => {
+    setModalVisible(false);
+    // Устгах үйлдлийг энд нэмэх
+    Alert.alert("Устгах үйлдэл", `Гутал устгах: ${selectedShoe.shoeCode}`);
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -66,12 +129,13 @@ const AddShoeScreen = () => {
       }
     };
     fetchUserData();
+    fetchShoes();
   }, []);
 
   const requestPermission = async () => {
     if (Platform.OS !== "web") {
-      const { status }= { }
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } = {};
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         alert("Permission to access media library is required!");
       }
@@ -125,46 +189,56 @@ const AddShoeScreen = () => {
       return;
     }
 
-    if (!/^A\d{5}$/.test(shoeCode)) {
-      Alert.alert("Гутлын код A00000 форматтай байх ёстой.");
-      return;
-    }
     const sizeNumber = parseInt(size, 10);
     if (sizeNumber < 34 || sizeNumber > 46) {
-      Alert.alert("Гутлын размер зөвхөн 34-46 дотор байх ёстой.");
+      Alert.alert("Гутлын размерийг дахин нягтална уу");
       return;
     }
 
     const priceNumber = parseInt(price.replace(/,/g, ""), 10);
-    if (priceNumber < 300 || priceNumber > 2500000) {
-      Alert.alert("Гутлын үнийн дүн 500,000 - 2,500,000 хооронд байх ёстой.");
+    if (priceNumber < 500000 || priceNumber > 2500000) {
+      Alert.alert("Гутлын үнийн дүнг дахин нягтална уу");
       return;
     }
 
     try {
-      setLoading(true); 
+      setLoading(true);
+
+      const existingShoeDoc = await getDoc(doc(firestore, "shoes", shoeCode));
+      if (existingShoeDoc.exists()) {
+        Alert.alert("Гутал аль хэдийн бүртгэгдсэн байна.");
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(selectedImage);
       const blob = await response.blob();
       const storageRef = ref(storage, `shoes/${shoeCode}.jpg`);
       await uploadBytes(storageRef, blob);
       const imageUrl = await getDownloadURL(storageRef);
 
-      await setDoc(doc(firestore, "shoes", shoeCode), {
+      const shoeData = {
+        shoeCode,
         shoeName,
         shoePrice: priceNumber,
         shoeSize: sizeNumber,
-        addedDate: Timestamp.fromDate(new Date()), 
-        ImageUrl: imageUrl, 
-        addedUserID: userData ? userData.userName : "", 
-        addedBranch: userData ? userData.branch : "", 
-        isSold: false, 
-        transactionMethod: "", 
-        soldUserID: "", 
-        buyerPhoneNumber: "", 
-        soldBranch: "", 
-        soldDate: null, 
-        soldPrice: null, 
-      });
+        addedDate: Timestamp.fromDate(new Date()),
+        ImageUrl: imageUrl,
+        addedUserID: userData ? userData.userName : "",
+        addedBranch: userData ? userData.branch : "",
+        isSold: false,
+        transactionMethod: "",
+        soldUserID: "",
+        buyerPhoneNumber: "",
+        soldBranch: "",
+        soldDate: null,
+        soldPrice: null,
+      };
+
+      await setDoc(doc(firestore, "shoes", shoeCode), shoeData);
+
+      // Шинэ гутлыг жагсаалтад нэмэх
+      setShoesList([...shoesList, shoeData]);
 
       Alert.alert("Гутал амжилттай нэмэгдлээ!");
       setShoeName("");
@@ -176,10 +250,32 @@ const AddShoeScreen = () => {
       Alert.alert("Гутал нэмэхэд алдаа гарлаа: ", error.message);
       console.log(error.message);
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
+    fetchShoes();
   };
 
+  const fetchShoes = async () => {
+    try {
+      // Firestore-оос isSold == false (зарагдаагүй) гутлуудыг шүүж авах
+      const q = query(
+        collection(firestore, "shoes"),
+        where("isSold", "==", false)
+      );
+      const querySnapshot = await getDocs(q);
+      const shoes = [];
+      querySnapshot.forEach((doc) => {
+        shoes.push({
+          ...doc.data(),
+          shoeCode: doc.id, // Document ID-г shoeCode гэж нэрлээд хадгалж байна
+        });
+      });
+      setShoesList(shoes);
+    } catch (error) {
+      console.error("Error fetching shoes: ", error);
+      Alert.alert("Гутлуудыг татах явцад алдаа гарлаа.");
+    }
+  };
 
   return (
     <CustomBackground>
@@ -229,12 +325,7 @@ const AddShoeScreen = () => {
             placeholder="34-46"
             returnKeyType="next"
             value={size}
-            onChangeText={(text) => {
-              const number = parseInt(text, 10);
-              if (!isNaN(number) && number >= 1 && number <= 46) {
-                setSize(text);
-              }
-            }}
+            onChangeText={setSize}
             keyboardType="numeric"
             style={styles.inputSecond}
           />
@@ -244,7 +335,7 @@ const AddShoeScreen = () => {
           <PaperTextInput
             placeholder="500000"
             returnKeyType="enter"
-            value={formatPrice(price)}
+            value={price}
             onChangeText={setPrice}
             keyboardType="numeric"
             style={styles.inputSecond}
@@ -274,7 +365,7 @@ const AddShoeScreen = () => {
             mode="contained"
             icon="plus-circle"
             onPress={handleAddShoe}
-            disabled={loading} // Уншилтын үед идэвхгүй болно
+            disabled={loading}
           >
             Гутал нэмэх
           </CustomButton>
@@ -283,17 +374,105 @@ const AddShoeScreen = () => {
         {loading && (
           <ProgressBar indeterminate color="#CE5A67" style={styles.progress} />
         )}
+
+        {/* DataTable хэсэг */}
+        <ScrollView horizontal={true}>
+          <DataTable>
+            <DataTable.Header>
+              <DataTable.Title style={styles.tableTitle}>
+                Гутлын Код
+              </DataTable.Title>
+              <DataTable.Title style={styles.tableTitle}>Нэр</DataTable.Title>
+              <DataTable.Title numeric style={styles.tableTitle}>
+                Размер
+              </DataTable.Title>
+              <DataTable.Title numeric style={styles.tableTitle}>
+                Үнэ
+              </DataTable.Title>
+              <DataTable.Title style={styles.tableTitle}>
+                Салбар
+              </DataTable.Title>
+              <DataTable.Title style={styles.tableTitle}>
+                Хэрэглэгч
+              </DataTable.Title>
+            </DataTable.Header>
+
+            {shoesList.map((shoe, index) => (
+              <DataTable.Row
+                key={index}
+                onLongPress={() => handleLongPress(shoe)}
+                style={styles.tableRow}
+              >
+                <DataTable.Cell style={styles.tableCell}>
+                  {shoe.shoeCode}
+                </DataTable.Cell>
+                <DataTable.Cell style={styles.tableCell}>
+                  {shoe.shoeName}
+                </DataTable.Cell>
+                <DataTable.Cell numeric style={styles.tableCell}>
+                  {shoe.shoeSize}
+                </DataTable.Cell>
+                <DataTable.Cell numeric style={styles.tableCell}>
+                  {shoe.shoePrice}
+                </DataTable.Cell>
+                <DataTable.Cell style={styles.tableCell}>
+                  {shoe.addedBranch}
+                </DataTable.Cell>
+                <DataTable.Cell style={styles.tableCell}>
+                  {shoe.addedUserID}
+                </DataTable.Cell>
+              </DataTable.Row>
+            ))}
+          </DataTable>
+        </ScrollView>
+
+        <EditModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       </ScrollView>
     </CustomBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  tableTitle: {
+    paddingHorizontal: 10, // Багана хоорондын зайг нэмэгдүүлнэ
+    textAlign: "center", // Текстийг голлуулж харуулна
+  },
+  tableCell: {
+    paddingHorizontal: 10, // Багана хоорондын зайг нэмэгдүүлнэ
+    textAlign: "center", // Текстийг голлуулж харуулна
+  },
   container: {
     flexGrow: 1,
     padding: 20,
     marginTop: "10%",
     justifyContent: "top",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContainer: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  modalButton: {
+    width: "100%",
+    marginBottom: 10,
   },
   row: {
     flexDirection: "row",

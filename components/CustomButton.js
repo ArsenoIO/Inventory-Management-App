@@ -13,18 +13,30 @@ export default function CustomButton({ mode, style, ...props }) {
       case "elevated":
         return "#FFFFFF"; // Purple color for elevated
       case "text":
-        return "#2F4F4F"; // Lighter blue for text
-        case "exit":
-          return "#973131";
+        return "transparent"; // Transparent for text mode
+      case "exit":
+        return "#973131";
       default:
         return undefined; // Default color
+    }
+  })();
+
+  // Determine the text color based on the mode
+  const textColor = (() => {
+    switch (mode) {
+      case "text":
+        return "#4f454b"; // Lighter blue for text
+      case "exit":
+        return "#FCF5ED"; // Light color for exit
+      default:
+        return undefined; // Default text color
     }
   })();
 
   return (
     <PaperButton
       style={[styles.button, style]}
-      labelStyle={styles.text}
+      labelStyle={[styles.text, { color: textColor }]} // Add text color
       mode={mode}
       buttonColor={buttonColor}
       {...props}

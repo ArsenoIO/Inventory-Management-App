@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
+  Image,
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
@@ -13,8 +14,18 @@ import {
   IconButton,
   RadioButton,
 } from "react-native-paper";
-import { firestore, auth } from "../firebaseConfig"; // Firebase firestore болон auth-ийн холбоос
-import { doc, getDoc, collection, updateDoc, query, where, getDocs } from "firebase/firestore"; // Firestore-ийн үйлдлүүдийг импортлох
+import { firestore, auth } from "../firebaseConfig";
+import {
+  doc,
+  getDoc,
+  collection,
+  updateDoc,
+  query,
+  where,
+  getDocs,
+  setDoc,
+  increment,
+} from "firebase/firestore";
 import CustomButton from "../components/CustomButton";
 
 const RevenueReportScreen = () => {
@@ -24,13 +35,16 @@ const RevenueReportScreen = () => {
   const [shoeSoldPrice, setShoeSoldPrice] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Шууд төлөлт");
+
   const [totalSalesCount, setTotalSalesCount] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [soldShoes, setSoldShoes] = useState([]);
+
   const [userData, setUserData] = useState(null);
-  const [documentId, setDocumentId] = useState(""); // Шинэ утга оруулах эсэхийг тодорхойлох
-const [shoeId, setShoeId ] = useState("");
-  // Нэвтэрсэн хэрэглэгчийн мэдээллийг татаж авах
+  const [documentId, setDocumentId] = useState("");
+  const [shoeId, setShoeId] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -48,117 +62,108 @@ const [shoeId, setShoeId ] = useState("");
     fetchUserData();
   }, []);
 
-  const handleUpdateShoe = async () => {
-    if (!shoeCode || !shoeSoldPrice || !buyerPhone) {
-      Alert.alert("Бүх талбарыг бөглөнө үү.");
-      return;
-    }
-  
-    try {
-      if (!documentId) {
-        Alert.alert("Гутлын код шалгаж, мэдээллийг бүрэн бөглөнө үү.");
-        return;
-      }
-  
-      const shoeRef = doc(firestore, "shoes", documentId);
-
-      await updateDoc(shoeRef, {
-        soldPrice: shoeSoldPrice,
-        buyerPhoneNumber: buyerPhone,
-        transactionMethod: paymentMethod,
-        soldDate: new Date(),
-        soldUserID: userData ? userData.userName : "",
-        soldBranch: userData ? userData.branch : "",
-        isSold: true,
-      });
-  
-      Alert.alert("Гутлын мэдээлэл шинэчлэгдсэн.");
-  
-      setShoeCode("");
-      setShoeSize("");
-      setShoePrice("");
-      setShoeSoldPrice("");
-      setBuyerPhone("");
-      setPaymentMethod("Шууд төлөлт");
-      setDocumentId(""); 
-  
-      fetchSoldShoes(); 
-    } catch (error) {
-      console.error("Error updating shoe: ", error);
-      Alert.alert("Гутлын мэдээллийг шинэчлэхэд алдаа гарлаа.");
-    }
-  };
-  
-
   const handleCheck = async () => {
     if (!shoeCode) {
       Alert.alert("Гутлын кодыг оруулна уу.");
       return;
     }
-  
+
     try {
-      // Баримтын ID-гаар шууд Firestore-оос баримт авах
       const shoeRef = doc(firestore, "shoes", shoeCode);
       const shoeDoc = await getDoc(shoeRef);
-      
+
       if (!shoeDoc.exists()) {
         Alert.alert("Гутлын код олдсонгүй.");
       } else {
         const shoeData = shoeDoc.data();
         setShoeSize(shoeData.shoeSize);
         setShoePrice(shoeData.shoePrice);
-        setDocumentId(shoeDoc.id); // Баримтын ID-г хадгална
+        setDocumentId(shoeDoc.id);
         setShoeId(shoeDoc.id);
+        setSelectedImage(shoeData.ImageUrl);
         Alert.alert("Код шалгалаа.");
-        console.log(shoeDoc.id);console.log(shoePrice);
       }
     } catch (error) {
       console.error("Error checking shoe code: ", error);
       Alert.alert("Гутлын код шалгах явцад алдаа гарлаа.");
     }
   };
-  
-  
 
-  // Өнөөдрийн зарагдсан гутлуудыг татах функц
-  const fetchSoldShoes = async () => {
+  const handleAddShoe = async () => {
+    if (!shoeCode || !shoeSoldPrice || !buyerPhone) {
+      Alert.alert("Бүх талбарыг бөглөнө үү.");
+      return;
+    }
+
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Өнөөдөр өглөөний 00:00 цаг
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1); // Маргаашийн 00:00 цаг
-  
-      const shoeRef = collection(firestore, "shoes");
-      const q = query(
-        shoeRef,
-        where("soldDate", ">=", today),
-        where("soldDate", "<", tomorrow),
-        where("isSold", "==", true) // Зарагдсан гутлуудыг шүүх
-      );
-      const querySnapshot = await getDocs(q);
-  
-      const soldShoesList = [];
-      let totalAmount = 0;
-  
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        soldShoesList.push(data);
-        totalAmount += parseFloat(data.soldPrice || 0);
-      });
-  
-      setSoldShoes(soldShoesList);
-      setTotalSalesCount(soldShoesList.length);
-      setTotalAmount(totalAmount);
+      const shoeRef = doc(firestore, "shoes", shoeCode);
+      const shoeDoc = await getDoc(shoeRef);
+      if (!shoeDoc.exists()) {
+        Alert.alert("Гутлын код олдсонгүй.");
+        return;
+      }
+
+      const shoeData = shoeDoc.data();
+
+      const newSoldShoe = {
+        shoeId: shoeDoc.id,
+        shoeSize: shoeData.shoeSize,
+        shoePrice: shoeData.shoePrice,
+        soldPrice: shoeSoldPrice,
+        buyerPhoneNumber: buyerPhone,
+        transactionMethod: paymentMethod,
+      };
+      setSoldShoes([...soldShoes, newSoldShoe]);
+      setTotalSalesCount(totalSalesCount + 1);
+      setTotalAmount(totalAmount + parseFloat(shoeSoldPrice));
+
+      setShoeCode("");
+      setShoeSize("");
+      setShoePrice("");
+      setShoeSoldPrice("");
+      setBuyerPhone("");
+      setPaymentMethod("Шууд төлөлт");
+
+      Alert.alert("Гутал амжилттай нэмэгдлээ!");
     } catch (error) {
-      console.error("Error fetching sold shoes: ", error);
-      Alert.alert("Зарагдсан гутлын мэдээллийг татахад алдаа гарлаа.");
+      console.error("Гутал нэмэхэд алдаа гарлаа: ", error);
+      Alert.alert("Гутал нэмэхэд алдаа гарлаа.");
     }
   };
-  
 
-  useEffect(() => {
-    fetchSoldShoes(); // Экран ачаалахад зарагдсан гутлуудыг татах
-  }, []);
+  const handleSaveSales = async () => {
+    try {
+      const today = new Date();
+      const salesDocID = `tuvSalbar${today.getFullYear()}${String(
+        today.getMonth() + 1
+      ).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+
+      await setDoc(doc(firestore, "sales", salesDocID), {
+        income: totalAmount,
+        outcome: 0,
+        totalAmount,
+        totalSales: totalSalesCount,
+        soldShoesList: soldShoes,
+        comment: "",
+      });
+
+      const branchDocRef = doc(firestore, "branches", "tuvSalbar");
+      await updateDoc(branchDocRef, {
+        totalSales: increment(totalSalesCount),
+        totalRevenue: increment(totalAmount),
+        totalShoe: increment(-totalSalesCount),
+      });
+
+      Alert.alert("Орлого амжилттай хадгалагдлаа!");
+
+      setSoldShoes([]);
+      setTotalSalesCount(0);
+      setTotalAmount(0);
+    } catch (error) {
+      console.error("Орлогыг хадгалахад алдаа гарлаа: ", error);
+      Alert.alert("Орлогыг хадгалахад алдаа гарлаа.");
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -168,7 +173,7 @@ const [shoeId, setShoeId ] = useState("");
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.row}>
           <PaperTextInput
-            style={styles.input}
+            style={[styles.input, { height: 40 }]}
             placeholder="Гутлын код"
             mode="outlined"
             value={shoeCode}
@@ -184,22 +189,30 @@ const [shoeId, setShoeId ] = useState("");
         </View>
 
         {shoeSize && shoePrice ? (
-          <View style={styles.input}>
+          <View style={styles.row}>
             <PaperTextInput
-              style={styles.input}
+              style={[styles.input, { height: 40 }]}
               placeholder="Размер"
               value={shoeSize}
-              marginBottom={10}
               editable={false}
             />
             <PaperTextInput
-              style={styles.input}
+              style={[styles.input, { height: 40 }]}
               placeholder="Үнийн дүн"
               value={shoePrice}
               editable={false}
             />
           </View>
         ) : null}
+
+        {selectedImage && (
+          <Image
+            source={{ uri: selectedImage }}
+            style={styles.image}
+            resizeMode="contain"
+          />
+        )}
+
         <View>
           <PaperTextInput
             placeholder="Зарагдсан үнэ"
@@ -253,9 +266,9 @@ const [shoeId, setShoeId ] = useState("");
         </View>
 
         <CustomButton
-          title="Гутлын мэдээллийг шинэчлэх"
+          title="Гутал нэмэх"
           mode="contained"
-          onPress={handleUpdateShoe}
+          onPress={handleAddShoe}
           style={styles.button}
         >
           Орлого нэмэх
@@ -274,10 +287,21 @@ const [shoeId, setShoeId ] = useState("");
             <PaperText>Размер: {shoe.shoeSize}</PaperText>
             <PaperText>Үндсэн үнэ: {shoe.shoePrice}</PaperText>
             <PaperText>Зарагдсан үнэ: {shoe.soldPrice}</PaperText>
-            <PaperText>Худалдан авагчийн утас: {shoe.buyerPhoneNumber}</PaperText>
+            <PaperText>
+              Худалдан авагчийн утас: {shoe.buyerPhoneNumber}
+            </PaperText>
             <PaperText>Төлбөрийн хэлбэр: {shoe.transactionMethod}</PaperText>
           </View>
         ))}
+
+        <CustomButton
+          title="Орлогыг хадгалах"
+          mode="contained"
+          onPress={handleSaveSales}
+          style={styles.button}
+        >
+          Орлогыг хадгалах
+        </CustomButton>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -293,6 +317,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 20,
+  },
+  image: {
+    width: "100%",
+    height: 200,
+    marginBottom: 16,
   },
   input: {
     flex: 1,
@@ -316,6 +345,9 @@ const styles = StyleSheet.create({
   },
   shoeItem: {
     marginVertical: 10,
+  },
+  button: {
+    marginTop: 20,
   },
 });
 

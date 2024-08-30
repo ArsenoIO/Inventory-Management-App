@@ -4,6 +4,7 @@ import HomeScreen from "../screens/HomeScreen";
 import AddShoeScreen from "../screens/AddShoeScreen";
 import RevenueReportScreen from "../screens/RevenueReportScreen";
 import AccountScreen from "../screens/AccountScreen";
+import MyHome from "../screens/MyHome";
 
 const BottomNav = () => {
   const [index, setIndex] = React.useState(0);
@@ -17,7 +18,7 @@ const BottomNav = () => {
   const renderScene = ({ route }) => {
     switch (route.key) {
       case "home":
-        return <HomeScreen />;
+        return <MyHome />;
       case "addShoe":
         return <AddShoeScreen />;
       case "revenue":
