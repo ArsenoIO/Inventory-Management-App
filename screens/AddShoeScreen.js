@@ -8,6 +8,7 @@ import {
   Alert,
   Modal,
 } from "react-native";
+import { FAB } from "react-native-paper";
 import { firestore, storage, auth } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
@@ -15,12 +16,12 @@ import { collection, getDocs, query, where } from "firebase/firestore"; // getDo
 import * as ImagePicker from "expo-image-picker";
 import CustomButton from "../components/CustomButton";
 import Text from "../components/Text";
+import CustomFAB from "../components/FabButton";
 import {
   TextInput as PaperTextInput,
   ProgressBar,
   DataTable,
 } from "react-native-paper";
-import CustomBackground from "../components/customBackground";
 import ModalSelector from "react-native-modal-selector";
 
 const EditModal = ({ visible, onClose, onEdit, onDelete }) => {
@@ -278,162 +279,165 @@ const AddShoeScreen = () => {
   };
 
   return (
-    <CustomBackground>
-      <ScrollView contentContainerStyle={styles.container}>
-        {selectedImage && (
-          <Image
-            source={{ uri: selectedImage }}
-            style={styles.image}
-            resizeMode="contain"
-          />
-        )}
-        <View style={styles.row}>
-          <CustomButton mode="elevated" icon="file" onPress={openImagePicker}>
-            Файлаас сонгох
-          </CustomButton>
-          <CustomButton mode="contained" icon="camera" onPress={openCamera}>
-            Камер ашиглах
-          </CustomButton>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={styles.label}>Гутлын код:</Text>
-          <PaperTextInput
-            placeholder="A00001"
-            returnKeyType="next"
-            mode="outlined"
-            value={shoeCode}
-            onChangeText={(text) => {
-              if (/^A\d{0,5}$/.test(text)) {
-                setShoeCode(text);
-              }
-            }}
-            maxLength={6}
-            style={styles.inputOutlined}
-          />
-          <ModalSelector
-            data={options}
-            initValue="AAA"
-            onChange={(option) => setShoeName(option.label)}
-            style={styles.modalSelector}
-            cancelButtonText="Цуцлах"
-          />
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Гутлын размер:</Text>
-          <PaperTextInput
-            placeholder="34-46"
-            returnKeyType="next"
-            value={size}
-            onChangeText={setSize}
-            keyboardType="numeric"
-            style={styles.inputSecond}
-          />
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Гутлын үнийн дүн:</Text>
-          <PaperTextInput
-            placeholder="500000"
-            returnKeyType="enter"
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="numeric"
-            style={styles.inputSecond}
-          />
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Хэрэглэгч:</Text>
-          <PaperTextInput
-            value={addedUserID}
-            onChangeText={setAddedUserID}
-            style={styles.disabledInput}
-            editable={false}
-          />
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Бүртгэсэн хаяг:</Text>
-          <PaperTextInput
-            value={addedBranch}
-            onChangeText={setAddedBranch}
-            style={styles.disabledInput}
-            editable={false}
-          />
-        </View>
-
-        <View style={styles.row}>
-          <CustomButton
-            mode="contained"
-            icon="plus-circle"
-            onPress={handleAddShoe}
-            disabled={loading}
-          >
-            Гутал нэмэх
-          </CustomButton>
-        </View>
-
-        {loading && (
-          <ProgressBar indeterminate color="#CE5A67" style={styles.progress} />
-        )}
-
-        {/* DataTable хэсэг */}
-        <ScrollView horizontal={true}>
-          <DataTable>
-            <DataTable.Header>
-              <DataTable.Title style={styles.tableTitle}>
-                Гутлын Код
-              </DataTable.Title>
-              <DataTable.Title style={styles.tableTitle}>Нэр</DataTable.Title>
-              <DataTable.Title numeric style={styles.tableTitle}>
-                Размер
-              </DataTable.Title>
-              <DataTable.Title numeric style={styles.tableTitle}>
-                Үнэ
-              </DataTable.Title>
-              <DataTable.Title style={styles.tableTitle}>
-                Салбар
-              </DataTable.Title>
-              <DataTable.Title style={styles.tableTitle}>
-                Хэрэглэгч
-              </DataTable.Title>
-            </DataTable.Header>
-
-            {shoesList.map((shoe, index) => (
-              <DataTable.Row
-                key={index}
-                onLongPress={() => handleLongPress(shoe)}
-                style={styles.tableRow}
-              >
-                <DataTable.Cell style={styles.tableCell}>
-                  {shoe.shoeCode}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.tableCell}>
-                  {shoe.shoeName}
-                </DataTable.Cell>
-                <DataTable.Cell numeric style={styles.tableCell}>
-                  {shoe.shoeSize}
-                </DataTable.Cell>
-                <DataTable.Cell numeric style={styles.tableCell}>
-                  {shoe.shoePrice}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.tableCell}>
-                  {shoe.addedBranch}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.tableCell}>
-                  {shoe.addedUserID}
-                </DataTable.Cell>
-              </DataTable.Row>
-            ))}
-          </DataTable>
-        </ScrollView>
-
-        <EditModal
-          visible={modalVisible}
-          onClose={() => setModalVisible(false)}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+    <ScrollView contentContainerStyle={styles.container}>
+      {selectedImage && (
+        <Image
+          source={{ uri: selectedImage }}
+          style={styles.image}
+          resizeMode="contain"
         />
+      )}
+      <View style={styles.row}>
+        <CustomFAB
+          icon="file"
+          label="Файлаас сонгох"
+          onPress={openImagePicker}
+          mode="elevated"
+          labelColor="black"
+        />
+
+        <CustomFAB
+          icon="camera"
+          label="Камер ашиглах"
+          onPress={openCamera}
+          mode="elevated"
+          labelColor="white"
+        />
+      </View>
+
+      <View style={styles.row}>
+        <Text style={styles.label}>Гутлын код:</Text>
+        <PaperTextInput
+          placeholder="A00001"
+          returnKeyType="next"
+          mode="outlined"
+          value={shoeCode}
+          onChangeText={(text) => {
+            if (/^A\d{0,5}$/.test(text)) {
+              setShoeCode(text);
+            }
+          }}
+          maxLength={6}
+          style={styles.inputOutlined}
+        />
+        <ModalSelector
+          data={options}
+          initValue="AAA"
+          onChange={(option) => setShoeName(option.label)}
+          style={styles.modalSelector}
+          cancelButtonText="Цуцлах"
+        />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Гутлын размер:</Text>
+        <PaperTextInput
+          returnKeyType="next"
+          value={size}
+          onChangeText={setSize}
+          keyboardType="numeric"
+          style={styles.inputSecond}
+        />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Гутлын үнийн дүн:</Text>
+        <PaperTextInput
+          returnKeyType="enter"
+          value={price}
+          onChangeText={setPrice}
+          keyboardType="numeric"
+          style={styles.inputSecond}
+        />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Хэрэглэгч:</Text>
+        <PaperTextInput
+          value={addedUserID}
+          onChangeText={setAddedUserID}
+          style={styles.disabledInput}
+          editable={false}
+        />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Бүртгэсэн хаяг:</Text>
+        <PaperTextInput
+          value={addedBranch}
+          onChangeText={setAddedBranch}
+          style={styles.disabledInput}
+          editable={false}
+        />
+      </View>
+
+      <View style={styles.button}>
+        <CustomButton
+          mode="contained"
+          icon="plus-circle"
+          onPress={handleAddShoe}
+          disabled={loading}
+        >
+          ГУТАЛ БҮРТГЭХ
+        </CustomButton>
+      </View>
+
+      {loading && (
+        <ProgressBar indeterminate color="#CE5A67" style={styles.progress} />
+      )}
+
+      {/* DataTable хэсэг */}
+      <ScrollView horizontal={true}>
+        <DataTable>
+          <DataTable.Header>
+            <DataTable.Title style={styles.tableTitle}>
+              Гутлын Код
+            </DataTable.Title>
+            <DataTable.Title style={styles.tableTitle}>Нэр</DataTable.Title>
+            <DataTable.Title numeric style={styles.tableTitle}>
+              Размер
+            </DataTable.Title>
+            <DataTable.Title numeric style={styles.tableTitle}>
+              Үнэ
+            </DataTable.Title>
+            <DataTable.Title style={styles.tableTitle}>Салбар</DataTable.Title>
+            <DataTable.Title style={styles.tableTitle}>
+              Хэрэглэгч
+            </DataTable.Title>
+          </DataTable.Header>
+
+          {shoesList.map((shoe, index) => (
+            <DataTable.Row
+              key={index}
+              onLongPress={() => handleLongPress(shoe)}
+              style={styles.tableRow}
+            >
+              <DataTable.Cell style={styles.tableCell}>
+                {shoe.shoeCode}
+              </DataTable.Cell>
+              <DataTable.Cell style={styles.tableCell}>
+                {shoe.shoeName}
+              </DataTable.Cell>
+              <DataTable.Cell numeric style={styles.tableCell}>
+                {shoe.shoeSize}
+              </DataTable.Cell>
+              <DataTable.Cell numeric style={styles.tableCell}>
+                {shoe.shoePrice}
+              </DataTable.Cell>
+              <DataTable.Cell style={styles.tableCell}>
+                {shoe.addedBranch}
+              </DataTable.Cell>
+              <DataTable.Cell style={styles.tableCell}>
+                {shoe.addedUserID}
+              </DataTable.Cell>
+            </DataTable.Row>
+          ))}
+        </DataTable>
       </ScrollView>
-    </CustomBackground>
+
+      <EditModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+    </ScrollView>
   );
 };
 
@@ -441,6 +445,11 @@ const styles = StyleSheet.create({
   tableTitle: {
     paddingHorizontal: 10, // Багана хоорондын зайг нэмэгдүүлнэ
     textAlign: "center", // Текстийг голлуулж харуулна
+  },
+  button: {
+    justifyContent: "center",
+    alignItems: "center", // Center the button horizontally
+    marginVertical: 10,
   },
   tableCell: {
     paddingHorizontal: 10, // Багана хоорондын зайг нэмэгдүүлнэ
@@ -484,6 +493,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#2F4F4F",
+  },
+  fab: {
+    width: "80%",
+    borderRadius: 50, // Make it fully rounded
+    justifyContent: "center",
   },
   inputSecond: {
     width: "70%",

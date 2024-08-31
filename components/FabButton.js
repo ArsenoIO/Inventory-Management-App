@@ -1,11 +1,11 @@
 import React from "react";
-import { Button as PaperButton } from "react-native-paper";
+import { FAB as PaperFAB } from "react-native-paper";
 import { StyleSheet } from "react-native";
 import { theme } from "../core/theme"; // Import your theme
 
-export default function CustomButton({ mode, style, ...props }) {
-  // Determine the color based on the mode and theme
-  const buttonColor = (() => {
+export default function CustomFAB({ mode, style, ...props }) {
+  // Determine the background color based on the mode and theme
+  const fabColor = (() => {
     switch (mode) {
       case "outlined":
         return theme.colors.main; // Use main color for outlined
@@ -18,47 +18,42 @@ export default function CustomButton({ mode, style, ...props }) {
       case "exit":
         return theme.colors.error; // Use error color for exit
       default:
-        return undefined; // Default color
+        return "#000000"; // Default color
     }
   })();
 
-  // Determine the text color based on the mode and theme
+  // Determine the label color based on the mode
   const textColor = (() => {
     switch (mode) {
       case "contained":
         return "#ffffff"; // White text for contained mode
       case "elevated":
         return "#000000"; // Black text for elevated mode
-      case "text":
-        return theme.colors.text; // Default text color for text mode
-      case "exit":
-        return theme.colors.surface; // Use surface color for exit text
       default:
-        return undefined; // Default text color
+        return "#000000"; // Default label color
     }
   })();
 
   return (
-    <PaperButton
-      style={[styles.button, style]}
-      labelStyle={[styles.text, { color: textColor }]} // Add text color
+    <PaperFAB
+      style={[styles.fab, { backgroundColor: fabColor }, style]}
+      labelStyle={[styles.label, { color: textColor }]} // Set label color
       mode={mode}
-      buttonColor={buttonColor}
       {...props}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
+  fab: {
     marginVertical: 10,
-    paddingVertical: 2,
-    width: "100%",
-    borderRadius: 10,
+    justifyContent: "center",
+    width: "50%",
+    borderRadius: 30, // Custom border radius for FAB
+    height: 50,
   },
-  text: {
+  label: {
     fontWeight: "bold",
-    fontSize: 15,
-    lineHeight: 26,
+    fontSize: 14,
   },
 });

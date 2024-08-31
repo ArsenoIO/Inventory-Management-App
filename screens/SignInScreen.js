@@ -8,6 +8,7 @@ import Header from "../components/Header";
 import Background from "../components/Background";
 import Button from "../components/Button";
 import TextInput from "../components/TextInput";
+import CustomButton from "../components/CustomButton";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
@@ -37,9 +38,6 @@ export default function SignInScreen() {
         returnKeyType="next"
         value={email}
         onChangeText={setEmail}
-        autoCapitalize="none"
-        autoCompleteType="email"
-        textContentType="emailAddress"
         keyboardType="email-address"
       />
       <TextInput
@@ -49,9 +47,9 @@ export default function SignInScreen() {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <Button mode="contained" onPress={handleSignIn}>
-        Log in
-      </Button>
+      <CustomButton mode="contained" onPress={handleSignIn}>
+        НЭВТРЭХ
+      </CustomButton>
     </Background>
   );
 }
