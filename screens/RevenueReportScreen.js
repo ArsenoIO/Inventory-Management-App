@@ -3,6 +3,7 @@ import {
   View,
   Image,
   StyleSheet,
+  Text,
   Alert,
   KeyboardAvoidingView,
   ScrollView,
@@ -13,6 +14,7 @@ import {
   Text as PaperText,
   IconButton,
   RadioButton,
+  Divider,
 } from "react-native-paper";
 import { firestore, auth } from "../firebaseConfig";
 import {
@@ -27,6 +29,8 @@ import {
   increment,
 } from "firebase/firestore";
 import CustomButton from "../components/CustomButton";
+import PaymentMethodSelector from "../components/PaymentMethodSelector";
+import ConfirmationDialog from "../components/ConfirmationDialog";
 
 const RevenueReportScreen = () => {
   const [shoeCode, setShoeCode] = useState("");
@@ -44,6 +48,10 @@ const RevenueReportScreen = () => {
   const [documentId, setDocumentId] = useState("");
   const [shoeId, setShoeId] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
+  const [errors, setErrors] = useState({});
+
+  const [isCheckDialogVisible, setIsCheckDialogVisible] = useState(false);
+  const [isSaveDialogVisible, setIsSaveDialogVisible] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -62,11 +70,44 @@ const RevenueReportScreen = () => {
     fetchUserData();
   }, []);
 
-  const handleCheck = async () => {
+  const validateForm = () => {
+    let valid = true;
+    let errors = {};
+
     if (!shoeCode) {
-      Alert.alert("Гутлын кодыг оруулна уу.");
-      return;
+      errors.shoeCode = "Гутлын код шаардлагатай";
+      valid = false;
     }
+    if (!shoeSoldPrice || isNaN(shoeSoldPrice)) {
+      errors.shoeSoldPrice = "Зарагдсан үнийн дүн зөв байх ёстой";
+      valid = false;
+    } else if (parseFloat(shoeSoldPrice) > parseFloat(shoePrice)) {
+      errors.shoeSoldPrice = "Зарагдсан үнэ үндсэн үнийн дүнгээс их байх ёсгүй";
+      valid = false;
+    }
+    if (!buyerPhone || buyerPhone.length < 8) {
+      errors.buyerPhone = "Утасны дугаар зөв байх ёстой";
+      valid = false;
+    }
+
+    setErrors(errors);
+    return valid;
+  };
+
+  const validateCheck = () => {
+    let valid = true;
+    let errors = {};
+
+    if (!shoeCode) {
+      errors.shoeCode = "Гутлын код оруулна уу";
+      valid = false;
+    }
+    setErrors(errors);
+    return valid;
+  };
+
+  const handleCheck = async () => {
+    if (!validateCheck()) return;
 
     try {
       const shoeRef = doc(firestore, "shoes", shoeCode);
@@ -81,7 +122,11 @@ const RevenueReportScreen = () => {
         setDocumentId(shoeDoc.id);
         setShoeId(shoeDoc.id);
         setSelectedImage(shoeData.ImageUrl);
-        Alert.alert("Код шалгалаа.");
+
+        // Force a re-render after setting the state
+        setTimeout(() => {
+          console.log(shoeSize, shoePrice);
+        }, 0);
       }
     } catch (error) {
       console.error("Error checking shoe code: ", error);
@@ -90,19 +135,11 @@ const RevenueReportScreen = () => {
   };
 
   const handleAddShoe = async () => {
-    if (!shoeCode || !shoeSoldPrice || !buyerPhone) {
-      Alert.alert("Бүх талбарыг бөглөнө үү.");
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       const shoeRef = doc(firestore, "shoes", shoeCode);
       const shoeDoc = await getDoc(shoeRef);
-      if (!shoeDoc.exists()) {
-        Alert.alert("Гутлын код олдсонгүй.");
-        return;
-      }
-
       const shoeData = shoeDoc.data();
 
       const newSoldShoe = {
@@ -173,37 +210,44 @@ const RevenueReportScreen = () => {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.row}>
           <PaperTextInput
-            style={[styles.input, { height: 40 }]}
+            style={styles.input}
             placeholder="Гутлын код"
             mode="outlined"
             value={shoeCode}
+            maxLength={6}
             onChangeText={setShoeCode}
+            error={!!errors.shoeCode} // Add error handling
           />
+
           <IconButton
             icon="magnify"
-            size={35}
+            size={20}
             iconColor="#697565"
             onPress={handleCheck}
             mode="outlined"
           />
         </View>
 
-        {shoeSize && shoePrice ? (
-          <View style={styles.row}>
-            <PaperTextInput
-              style={[styles.input, { height: 40 }]}
-              placeholder="Размер"
-              value={shoeSize}
-              editable={false}
-            />
-            <PaperTextInput
-              style={[styles.input, { height: 40 }]}
-              placeholder="Үнийн дүн"
-              value={shoePrice}
-              editable={false}
-            />
-          </View>
-        ) : null}
+        {errors.shoeCode && (
+          <PaperText style={styles.errorText}>{errors.shoeCode}</PaperText>
+        )}
+        <Divider style={styles.divider} />
+        <View style={styles.row}>
+          <PaperTextInput
+            label="Размер"
+            value={shoeSize}
+            mode="outlined"
+            style={[styles.input, { backgroundColor: "#f5ebe0" }]}
+            editable={false}
+          />
+          <PaperTextInput
+            label="Үнийн дүн"
+            value={shoePrice}
+            mode="outlined"
+            style={[styles.input, { backgroundColor: "#f5ebe0" }]}
+            editable={false}
+          />
+        </View>
 
         {selectedImage && (
           <Image
@@ -213,57 +257,41 @@ const RevenueReportScreen = () => {
           />
         )}
 
-        <View>
-          <PaperTextInput
-            placeholder="Зарагдсан үнэ"
-            value={shoeSoldPrice}
-            onChangeText={setShoeSoldPrice}
-            mode="outlined"
-            keyboardType="numeric"
-            style={styles.input}
-          />
-        </View>
-        <View>
-          <PaperTextInput
-            placeholder="Худалдан авагчийн утасны дугаар"
-            value={buyerPhone}
-            mode="outlined"
-            onChangeText={setBuyerPhone}
-            keyboardType="phone-pad"
-            style={styles.input}
-          />
-        </View>
-        <View>
-          <PaperText style={styles.label}>Төлбөрийн арга:</PaperText>
-        </View>
+        <Divider style={styles.divider} />
 
-        <View style={styles.row}>
-          <RadioButton.Group
-            onValueChange={(value) => setPaymentMethod(value)}
-            value={paymentMethod}
-          >
-            <View style={styles.radio}>
-              <RadioButton value="Шууд төлөлт" />
-              <PaperText>Шууд төлөлт</PaperText>
-            </View>
-            <View style={styles.radio}>
-              <RadioButton value="Storepay" />
-              <PaperText>Storepay</PaperText>
-            </View>
-            <View style={styles.radio}>
-              <RadioButton value="Pocket" />
-              <PaperText>Pocket</PaperText>
-            </View>
-            <View style={styles.radio}>
-              <RadioButton value="Lend" />
-              <PaperText>Lend</PaperText>
-            </View>
-            <View style={styles.radio}>
-              <RadioButton value="Leasing" />
-              <PaperText>Leasing</PaperText>
-            </View>
-          </RadioButton.Group>
-        </View>
+        <PaperTextInput
+          placeholder="Зарагдсан үнэ"
+          value={shoeSoldPrice}
+          onChangeText={setShoeSoldPrice}
+          mode="outlined"
+          keyboardType="numeric"
+          maxLength={7}
+          style={styles.input}
+          error={!!errors.shoeSoldPrice} // Add error handling
+        />
+        {errors.shoeSoldPrice && (
+          <PaperText style={styles.errorText}>{errors.shoeSoldPrice}</PaperText>
+        )}
+
+        <PaperTextInput
+          placeholder="Худалдан авагчийн утасны дугаар"
+          value={buyerPhone}
+          mode="outlined"
+          onChangeText={setBuyerPhone}
+          keyboardType="phone-pad"
+          maxLength={8}
+          style={styles.input}
+          error={!!errors.buyerPhone} // Add error handling
+        />
+        {errors.buyerPhone && (
+          <PaperText style={styles.errorText}>{errors.buyerPhone}</PaperText>
+        )}
+
+        <PaperText style={styles.label}>Төлбөрийн хэлбэр:</PaperText>
+        <PaymentMethodSelector
+          selectedMethod={paymentMethod}
+          onSelect={(value) => setPaymentMethod(value)}
+        />
 
         <CustomButton
           title="Гутал нэмэх"
@@ -312,24 +340,29 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
   },
+  input: {
+    flex: 1, // Make the input take up the remaining space
+    marginEnd: 10,
+    marginVertical: 10,
+    backgroundColor: "transparent",
+    width: "100%", // Full width input
+    height: 35,
+  },
+  errorText: {
+    color: "red",
+    marginBottom: 10,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 20,
   },
   image: {
     width: "100%",
     height: 200,
     marginBottom: 16,
   },
-  input: {
-    flex: 1,
-    margin: 10,
-    height: 50,
-  },
   label: {
-    flex: 1,
     marginLeft: 18,
     margin: 10,
     fontWeight: "bold",
@@ -348,6 +381,9 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 20,
+  },
+  divider: {
+    marginVertical: 5,
   },
 });
 

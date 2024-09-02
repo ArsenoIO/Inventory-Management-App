@@ -361,7 +361,7 @@ const AddShoeScreen = () => {
         value={addedUserID}
         onChangeText={setAddedUserID}
         mode="outlined"
-        style={styles.input}
+        style={[styles.input, { backgroundColor: "#f5ebe0" }]}
         editable={false}
       />
 
@@ -370,7 +370,7 @@ const AddShoeScreen = () => {
         value={addedBranch}
         onChangeText={setAddedBranch}
         mode="outlined"
-        style={styles.input}
+        style={[styles.input, { backgroundColor: "#f5ebe0" }]}
         editable={false}
       />
 
@@ -494,6 +494,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#ffffff",
+    height: 200,
   },
   modalContainer: {
     width: 200,

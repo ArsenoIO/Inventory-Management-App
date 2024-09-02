@@ -11,7 +11,7 @@ const ConfirmationDialog = ({
 }) => {
   return (
     <Portal>
-      <Dialog visible={visible} onDismiss={onDismiss}>
+      <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
         <Dialog.Title style={styles.title}>{title}</Dialog.Title>
         <Dialog.Content>
           <Text style={styles.content}>{content}</Text>
@@ -26,6 +26,9 @@ const ConfirmationDialog = ({
 };
 
 const styles = StyleSheet.create({
+  dialog: {
+    backgroundColor: "#ffffff", // Set background to white
+  },
   title: {
     textAlign: "center",
   },

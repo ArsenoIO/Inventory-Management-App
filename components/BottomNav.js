@@ -7,11 +7,32 @@ import AccountScreen from "../screens/AccountScreen";
 
 const BottomNav = () => {
   const [index, setIndex] = React.useState(0);
+
   const [routes] = React.useState([
-    { key: "home", title: "Эхлэл", focusedIcon: "home-outline" },
-    { key: "addShoe", title: "Бүртгэл", focusedIcon: "plus-box-outline" },
-    { key: "revenue", title: "Орлого", focusedIcon: "file-plus-outline" },
-    { key: "account", title: "Хэрэглэгч", focusedIcon: "account-outline" },
+    {
+      key: "home",
+      title: "Эхлэл",
+      focusedIcon: "home",
+      unfocusedIcon: "home-outline",
+    },
+    {
+      key: "addShoe",
+      title: "Бүртгэл",
+      focusedIcon: "plus-box",
+      unfocusedIcon: "plus-box-outline",
+    },
+    {
+      key: "revenue",
+      title: "Орлого",
+      focusedIcon: "file-plus",
+      unfocusedIcon: "file-plus-outline",
+    },
+    {
+      key: "account",
+      title: "Хэрэглэгч",
+      focusedIcon: "account",
+      unfocusedIcon: "account-outline",
+    },
   ]);
 
   const renderScene = ({ route }) => {
@@ -34,6 +55,15 @@ const BottomNav = () => {
       navigationState={{ index, routes }}
       onIndexChange={setIndex}
       renderScene={renderScene}
+      barStyle={{
+        backgroundColor: "#ffffff",
+        borderTopWidth: 1,
+        borderTopColor: "#ced4da",
+      }}
+      activeColor="#ffb703"
+      inactiveColor="#1F1717"
+      shifting={false} // Disable shifting to keep all labels visible
+      sceneAnimationEnabled={false} // Disable animation for a smoother experience
     />
   );
 };
