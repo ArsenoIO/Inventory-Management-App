@@ -6,7 +6,6 @@ import { useNavigation } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import Header from "../components/Header";
 import Background from "../components/Background";
-import Button from "../components/Button";
 import TextInput from "../components/TextInput";
 import CustomButton from "../components/CustomButton";
 
