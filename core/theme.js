@@ -10,5 +10,6 @@ export const theme = {
     third: "#023047",
     fourth: "#219ebc",
     fifth: "#8ecae6",
+    background: "#ffffff",
   },
 };

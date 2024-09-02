@@ -8,7 +8,6 @@ import {
   Alert,
   Modal,
 } from "react-native";
-import { FAB } from "react-native-paper";
 import { firestore, storage, auth } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
@@ -87,6 +86,7 @@ const AddShoeScreen = () => {
   const [shoesList, setShoesList] = useState([]); // Бүх гутлын мэдээллийг хадгалах төлөв
   const [selectedShoe, setSelectedShoe] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleLongPress = (shoe) => {
     setSelectedShoe(shoe);
@@ -172,35 +172,42 @@ const AddShoeScreen = () => {
     }
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("mn-MN").format(price);
+  const validateForm = () => {
+    let valid = true;
+    let errors = {};
+
+    if (!shoeName) {
+      errors.shoeName = "Гутлын нэр шаардлагатай";
+      valid = false;
+    }
+    if (!shoeCode) {
+      errors.shoeCode = "Гутлын код шаардлагатай";
+      valid = false;
+    }
+    if (!size || isNaN(size) || parseInt(size) < 34 || parseInt(size) > 46) {
+      errors.size = "Размерийн утгыг зөв оруулна уу (34-46)";
+      valid = false;
+    }
+    if (
+      !price ||
+      isNaN(price) ||
+      parseInt(price) < 500000 ||
+      parseInt(price) > 2500000
+    ) {
+      errors.price = "Зөв үнэ оруулна уу (500,000-2,500,000)";
+      valid = false;
+    }
+    if (!selectedImage) {
+      errors.selectedImage = "Зураг оруулна уу";
+      valid = false;
+    }
+
+    setErrors(errors);
+    return valid;
   };
 
   const handleAddShoe = async () => {
-    if (
-      !shoeName ||
-      !shoeCode ||
-      !size ||
-      !price ||
-      !selectedImage ||
-      !addedUserID ||
-      !addedBranch
-    ) {
-      Alert.alert("Бүх мэдээллээ оруулна уу.");
-      return;
-    }
-
-    const sizeNumber = parseInt(size, 10);
-    if (sizeNumber < 34 || sizeNumber > 46) {
-      Alert.alert("Гутлын размерийг дахин нягтална уу");
-      return;
-    }
-
-    const priceNumber = parseInt(price.replace(/,/g, ""), 10);
-    if (priceNumber < 500000 || priceNumber > 2500000) {
-      Alert.alert("Гутлын үнийн дүнг дахин нягтална уу");
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       setLoading(true);
@@ -304,68 +311,68 @@ const AddShoeScreen = () => {
           labelColor="white"
         />
       </View>
+      <PaperTextInput
+        label="Гутлын код"
+        value={shoeCode}
+        onChangeText={setShoeCode}
+        mode="outlined"
+        style={styles.input}
+        error={!!errors.shoeCode}
+      />
+      {errors.shoeCode && (
+        <Text style={styles.errorText}>{errors.shoeCode}</Text>
+      )}
+      <ModalSelector
+        data={options}
+        initValue="AAA"
+        onChange={(option) => setShoeName(option.label)}
+        style={styles.modalSelector}
+        error={!!errors.shoeName}
+        cancelButtonText="Цуцлах"
+      />
+      {errors.shoeName && (
+        <Text style={styles.errorText}>{errors.shoeName}</Text>
+      )}
 
-      <View style={styles.row}>
-        <Text style={styles.label}>Гутлын код:</Text>
-        <PaperTextInput
-          placeholder="A00001"
-          returnKeyType="next"
-          mode="outlined"
-          value={shoeCode}
-          onChangeText={(text) => {
-            if (/^A\d{0,5}$/.test(text)) {
-              setShoeCode(text);
-            }
-          }}
-          maxLength={6}
-          style={styles.inputOutlined}
-        />
-        <ModalSelector
-          data={options}
-          initValue="AAA"
-          onChange={(option) => setShoeName(option.label)}
-          style={styles.modalSelector}
-          cancelButtonText="Цуцлах"
-        />
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Гутлын размер:</Text>
-        <PaperTextInput
-          returnKeyType="next"
-          value={size}
-          onChangeText={setSize}
-          keyboardType="numeric"
-          style={styles.inputSecond}
-        />
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Гутлын үнийн дүн:</Text>
-        <PaperTextInput
-          returnKeyType="enter"
-          value={price}
-          onChangeText={setPrice}
-          keyboardType="numeric"
-          style={styles.inputSecond}
-        />
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Хэрэглэгч:</Text>
-        <PaperTextInput
-          value={addedUserID}
-          onChangeText={setAddedUserID}
-          style={styles.disabledInput}
-          editable={false}
-        />
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Бүртгэсэн хаяг:</Text>
-        <PaperTextInput
-          value={addedBranch}
-          onChangeText={setAddedBranch}
-          style={styles.disabledInput}
-          editable={false}
-        />
-      </View>
+      <PaperTextInput
+        label="Гутлын размер"
+        value={size}
+        onChangeText={setSize}
+        keyboardType="numeric"
+        mode="outlined"
+        style={styles.input}
+        error={!!errors.size}
+      />
+      {errors.size && <Text style={styles.errorText}>{errors.size}</Text>}
+
+      <PaperTextInput
+        label="Гутлын үнийн дүн"
+        value={price}
+        onChangeText={setPrice}
+        keyboardType="numeric"
+        mode="outlined"
+        style={styles.input}
+        error={!!errors.price}
+      />
+      {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
+
+      <PaperTextInput
+        label="Хэрэглэгч"
+        value={addedUserID}
+        onChangeText={setAddedUserID}
+        mode="outlined"
+        style={styles.input}
+        editable={false}
+      />
+
+      <PaperTextInput
+        label="Бүртгэсэн хаяг"
+        value={addedBranch}
+        onChangeText={setAddedBranch}
+        mode="outlined"
+        style={styles.input}
+        editable={false}
+      />
 
       <View style={styles.button}>
         <CustomButton
@@ -442,36 +449,57 @@ const AddShoeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  tableTitle: {
-    paddingHorizontal: 10, // Багана хоорондын зайг нэмэгдүүлнэ
-    textAlign: "center", // Текстийг голлуулж харуулна
+  container: {
+    flexGrow: 1,
+    padding: 20,
+    marginTop: "10%",
+  },
+  input: {
+    marginVertical: 10,
+    backgroundColor: "transparent",
+    width: "100%", // Make input full width
+    height: 35,
   },
   button: {
     justifyContent: "center",
-    alignItems: "center", // Center the button horizontally
+    alignItems: "center",
     marginVertical: 10,
+  },
+  image: {
+    width: "100%",
+    height: 200,
+    marginBottom: 16,
+  },
+  progress: {
+    marginTop: 20,
+  },
+  errorText: {
+    color: "red",
+    marginBottom: 10,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  tableTitle: {
+    paddingHorizontal: 10, // Багана хоорондын зайг нэмэгдүүлнэ
+    textAlign: "center", // Текстийг голлуулж харуулна
   },
   tableCell: {
     paddingHorizontal: 10, // Багана хоорондын зайг нэмэгдүүлнэ
     textAlign: "center", // Текстийг голлуулж харуулна
   },
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    marginTop: "10%",
-    justifyContent: "top",
-  },
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "#ffffff",
   },
   modalContainer: {
-    width: 300,
-    padding: 20,
+    width: 200,
+    padding: 30,
     backgroundColor: "white",
-    borderRadius: 10,
+    borderRadius: 50,
     alignItems: "center",
   },
   modalTitle: {
@@ -481,50 +509,18 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     width: "100%",
-    marginBottom: 10,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 17,
-  },
-  label: {
-    width: "30%",
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#2F4F4F",
   },
   fab: {
     width: "80%",
     borderRadius: 50, // Make it fully rounded
     justifyContent: "center",
   },
-  inputSecond: {
-    width: "70%",
-    backgroundColor: "transparent",
-  },
-  image: {
-    width: "100%",
-    height: 200,
-    marginBottom: 16,
-  },
-  disabledInput: {
-    backgroundColor: "#F1F1F1",
-    width: "70%",
-  },
   modalSelector: {
     flex: 1,
     backgroundColor: "transparent",
     borderColor: "black",
     height: 40,
-  },
-  inputOutlined: {
-    width: "35%",
-    backgroundColor: "transparent",
-    height: 40,
-  },
-  progress: {
-    marginTop: 20,
+    marginVertical: 10,
   },
 });
 
