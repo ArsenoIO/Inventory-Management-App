@@ -91,9 +91,10 @@ const AccountScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#ffffff",
-    marginTop: "10%",
+    marginTop: "15%",
+    marginRight: "5%",
+    marginLeft: "5%",
   },
   profileContainer: {
     marginBottom: 20,

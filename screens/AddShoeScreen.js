@@ -228,8 +228,8 @@ const AddShoeScreen = () => {
       const shoeData = {
         shoeCode,
         shoeName,
-        shoePrice: priceNumber,
-        shoeSize: sizeNumber,
+        shoePrice: price,
+        shoeSize: size,
         addedDate: Timestamp.fromDate(new Date()),
         ImageUrl: imageUrl,
         addedUserID: userData ? userData.userName : "",
@@ -315,6 +315,7 @@ const AddShoeScreen = () => {
         label="Гутлын код"
         value={shoeCode}
         onChangeText={setShoeCode}
+        maxLength={5}
         mode="outlined"
         style={styles.input}
         error={!!errors.shoeCode}
@@ -324,7 +325,6 @@ const AddShoeScreen = () => {
       )}
       <ModalSelector
         data={options}
-        initValue="AAA"
         onChange={(option) => setShoeName(option.label)}
         style={styles.modalSelector}
         error={!!errors.shoeName}
@@ -339,6 +339,7 @@ const AddShoeScreen = () => {
         value={size}
         onChangeText={setSize}
         keyboardType="numeric"
+        maxLength={2}
         mode="outlined"
         style={styles.input}
         error={!!errors.size}
@@ -350,6 +351,7 @@ const AddShoeScreen = () => {
         value={price}
         onChangeText={setPrice}
         keyboardType="numeric"
+        maxLength={7}
         mode="outlined"
         style={styles.input}
         error={!!errors.price}
@@ -493,14 +495,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#ffffff",
-    height: 200,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContainer: {
-    width: 200,
-    padding: 30,
+    width: 300,
+    padding: 20,
     backgroundColor: "white",
-    borderRadius: 50,
+    borderRadius: 10,
     alignItems: "center",
   },
   modalTitle: {

@@ -4,6 +4,7 @@ import HomeScreen from "../screens/HomeScreen";
 import AddShoeScreen from "../screens/AddShoeScreen";
 import RevenueReportScreen from "../screens/RevenueReportScreen";
 import AccountScreen from "../screens/AccountScreen";
+import Dashboard from "../screens/DashBoard";
 
 const BottomNav = () => {
   const [index, setIndex] = React.useState(0);
