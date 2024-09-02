@@ -11,7 +11,13 @@ import {
 import { firestore, storage, auth } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
-import { collection, getDocs, query, where } from "firebase/firestore"; // getDocs функц нэмэх
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+} from "firebase/firestore"; // getDocs функц нэмэх
 import * as ImagePicker from "expo-image-picker";
 import CustomButton from "../components/CustomButton";
 import Text from "../components/Text";
@@ -34,13 +40,7 @@ const EditModal = ({ visible, onClose, onEdit, onDelete }) => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>Мэдээллийг шинэчлэх</Text>
-          <CustomButton
-            mode="contained"
-            onPress={onEdit}
-            style={styles.modalButton}
-          >
-            Засварлах
-          </CustomButton>
+
           <CustomButton
             mode="contained"
             onPress={onDelete}
@@ -93,19 +93,17 @@ const AddShoeScreen = () => {
     setModalVisible(true);
   };
 
-  const handleEdit = () => {
+  const handleDelete = async () => {
     setModalVisible(false);
-    // Засварлах үйлдлийг энд нэмэх
-    Alert.alert(
-      "Засварлах үйлдэл",
-      `Гутал засварлах: ${selectedShoe.shoeCode}`
-    );
-  };
-
-  const handleDelete = () => {
-    setModalVisible(false);
-    // Устгах үйлдлийг энд нэмэх
-    Alert.alert("Устгах үйлдэл", `Гутал устгах: ${selectedShoe.shoeCode}`);
+    try {
+      await deleteDoc(doc(firestore, "shoes", selectedShoe.shoeCode));
+      setShoesList(
+        shoesList.filter((shoe) => shoe.shoeCode !== selectedShoe.shoeCode)
+      );
+      Alert.alert("Гутал амжилттай устгагдлаа!");
+    } catch (error) {
+      Alert.alert("Гутал устгахад алдаа гарлаа: ", error.message);
+    }
   };
 
   useEffect(() => {
@@ -443,7 +441,6 @@ const AddShoeScreen = () => {
       <EditModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        onEdit={handleEdit}
         onDelete={handleDelete}
       />
     </ScrollView>
