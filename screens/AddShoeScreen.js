@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Image,
   View,
@@ -6,11 +6,19 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Button,
   Modal,
+  RefreshControl,
 } from "react-native";
 import { firestore, storage, auth } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  Timestamp,
+  getFirestore,
+} from "firebase/firestore";
 import {
   collection,
   getDocs,
@@ -57,22 +65,6 @@ const EditModal = ({ visible, onClose, onEdit, onDelete }) => {
   );
 };
 
-const options = [
-  { key: 1, label: "TMA" },
-  { key: 2, label: "ABR" },
-  { key: 3, label: "BRA" },
-  { key: 4, label: "CMB" },
-  { key: 5, label: "MDN" },
-  { key: 6, label: "RCH" },
-  { key: 7, label: "DGA" },
-  { key: 8, label: "TAN" },
-  { key: 9, label: "BDJ" },
-  { key: 10, label: "ARR" },
-  { key: 11, label: "ACA" },
-  { key: 12, label: "ALA" },
-  { key: 13, label: "AHA" },
-];
-
 const AddShoeScreen = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [shoeCode, setShoeCode] = useState("");
@@ -87,6 +79,17 @@ const AddShoeScreen = () => {
   const [selectedShoe, setSelectedShoe] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showTable, setShowTable] = useState(false);
+
+  const [names, setNames] = useState([]);
+  const [selectedCode, setSelectedCode] = useState(null);
+
+  const db = getFirestore();
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchUserData().then(() => setRefreshing(false));
+  }, []);
 
   const handleLongPress = (shoe) => {
     setSelectedShoe(shoe);
@@ -106,28 +109,53 @@ const AddShoeScreen = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          const userDoc = await getDoc(doc(firestore, "users", user.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUserData(userData);
-            setAddedUserID(userData.userName);
-            setAddedBranch(userData.branch);
-          } else {
-            console.log("No such document! Printing addshoeScreem from");
-          }
-        } else {
-          console.log("No user is logged in!");
-        }
-      } catch (error) {
-        console.error("Error fetching user data: ", error);
+  const fetchNames = async () => {
+    try {
+      const namesCollection = collection(db, "names");
+      const nameSnapshot = await getDocs(namesCollection);
+
+      if (nameSnapshot.empty) {
+        Alert.alert("Өгөгдлийн сангаас нэрүүд олдсонгүй.");
+        return;
       }
-    };
+
+      const nameList = nameSnapshot.docs.map((doc) => ({
+        key: doc.id,
+        label: doc.data().nameDetail
+          ? `${doc.id} - ${doc.data().nameDetail}`
+          : `${doc.id} - Null`,
+      }));
+      setNames(nameList);
+    } catch (error) {
+      console.error("Error fetching names: ", error);
+      Alert.alert("Өгөгдлийн сангаас нэр татаж авахад алдаа гарлаа.");
+    }
+  };
+
+  const fetchUserData = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(firestore, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserData(userData);
+          setAddedUserID(userData.userName);
+          setAddedBranch(userData.branch);
+        } else {
+          console.log("No such document! Printing addshoeScreem from");
+        }
+      } else {
+        console.log("No user is logged in!");
+      }
+    } catch (error) {
+      console.error("Error fetching user data: ", error);
+    }
+  };
+
+  useEffect(() => {
     fetchUserData();
+    fetchNames();
     fetchShoes();
   }, []);
 
@@ -243,7 +271,6 @@ const AddShoeScreen = () => {
 
       await setDoc(doc(firestore, "shoes", shoeCode), shoeData);
 
-      // Шинэ гутлыг жагсаалтад нэмэх
       setShoesList([...shoesList, shoeData]);
 
       Alert.alert("Гутал амжилттай нэмэгдлээ!");
@@ -263,7 +290,6 @@ const AddShoeScreen = () => {
 
   const fetchShoes = async () => {
     try {
-      // Firestore-оос isSold == false (зарагдаагүй) гутлуудыг шүүж авах
       const q = query(
         collection(firestore, "shoes"),
         where("isSold", "==", false)
@@ -273,7 +299,7 @@ const AddShoeScreen = () => {
       querySnapshot.forEach((doc) => {
         shoes.push({
           ...doc.data(),
-          shoeCode: doc.id, // Document ID-г shoeCode гэж нэрлээд хадгалж байна
+          shoeCode: doc.id,
         });
       });
       setShoesList(shoes);
@@ -321,13 +347,15 @@ const AddShoeScreen = () => {
       {errors.shoeCode && (
         <Text style={styles.errorText}>{errors.shoeCode}</Text>
       )}
+
       <ModalSelector
-        data={options}
-        onChange={(option) => setShoeName(option.label)}
-        style={styles.modalSelector}
-        error={!!errors.shoeName}
-        cancelButtonText="Цуцлах"
+        data={names}
+        initValue="Код сонгоно уу"
+        onChange={(option) => {
+          setShoeName(option.key);
+        }}
       />
+
       {errors.shoeName && (
         <Text style={styles.errorText}>{errors.shoeName}</Text>
       )}
@@ -389,54 +417,62 @@ const AddShoeScreen = () => {
         <ProgressBar indeterminate color="#CE5A67" style={styles.progress} />
       )}
 
-      {/* DataTable хэсэг */}
-      <ScrollView horizontal={true}>
-        <DataTable>
-          <DataTable.Header>
-            <DataTable.Title style={styles.tableTitle}>
-              Гутлын Код
-            </DataTable.Title>
-            <DataTable.Title style={styles.tableTitle}>Нэр</DataTable.Title>
-            <DataTable.Title numeric style={styles.tableTitle}>
-              Размер
-            </DataTable.Title>
-            <DataTable.Title numeric style={styles.tableTitle}>
-              Үнэ
-            </DataTable.Title>
-            <DataTable.Title style={styles.tableTitle}>Салбар</DataTable.Title>
-            <DataTable.Title style={styles.tableTitle}>
-              Хэрэглэгч
-            </DataTable.Title>
-          </DataTable.Header>
+      <Button
+        title={showTable ? "Хүснэгтийг нуух" : "Хүснэгт харуулах"}
+        onPress={() => setShowTable(!showTable)}
+      />
+      {showTable && (
+        <ScrollView horizontal={true}>
+          <DataTable>
+            <DataTable.Header>
+              <DataTable.Title style={styles.tableTitle}>
+                Гутлын Код
+              </DataTable.Title>
+              <DataTable.Title style={styles.tableTitle}>Нэр</DataTable.Title>
+              <DataTable.Title numeric style={styles.tableTitle}>
+                Размер
+              </DataTable.Title>
+              <DataTable.Title numeric style={styles.tableTitle}>
+                Үнэ
+              </DataTable.Title>
+              <DataTable.Title style={styles.tableTitle}>
+                Салбар
+              </DataTable.Title>
+              <DataTable.Title style={styles.tableTitle}>
+                Хэрэглэгч
+              </DataTable.Title>
+            </DataTable.Header>
 
-          {shoesList.map((shoe, index) => (
-            <DataTable.Row
-              key={index}
-              onLongPress={() => handleLongPress(shoe)}
-              style={styles.tableRow}
-            >
-              <DataTable.Cell style={styles.tableCell}>
-                {shoe.shoeCode}
-              </DataTable.Cell>
-              <DataTable.Cell style={styles.tableCell}>
-                {shoe.shoeName}
-              </DataTable.Cell>
-              <DataTable.Cell numeric style={styles.tableCell}>
-                {shoe.shoeSize}
-              </DataTable.Cell>
-              <DataTable.Cell numeric style={styles.tableCell}>
-                {shoe.shoePrice}
-              </DataTable.Cell>
-              <DataTable.Cell style={styles.tableCell}>
-                {shoe.addedBranch}
-              </DataTable.Cell>
-              <DataTable.Cell style={styles.tableCell}>
-                {shoe.addedUserID}
-              </DataTable.Cell>
-            </DataTable.Row>
-          ))}
-        </DataTable>
-      </ScrollView>
+            {shoesList.map((shoe, index) => (
+              <DataTable.Row
+                key={index}
+                onLongPress={() => handleLongPress(shoe)}
+                style={styles.tableRow}
+              >
+                <DataTable.Cell style={styles.tableCell}>
+                  {shoe.shoeCode}
+                </DataTable.Cell>
+                <DataTable.Cell style={styles.tableCell}>
+                  {shoe.shoeName}
+                </DataTable.Cell>
+                <DataTable.Cell numeric style={styles.tableCell}>
+                  {shoe.shoeSize}
+                </DataTable.Cell>
+                <DataTable.Cell numeric style={styles.tableCell}>
+                  {shoe.shoePrice}
+                </DataTable.Cell>
+                <DataTable.Cell style={styles.tableCell}>
+                  {shoe.addedBranch}
+                </DataTable.Cell>
+                <DataTable.Cell style={styles.tableCell}>
+                  {shoe.addedUserID}
+                </DataTable.Cell>
+              </DataTable.Row>
+            ))}
+          </DataTable>
+        </ScrollView>
+      )}
+      {/* DataTable хэсэг */}
 
       <EditModal
         visible={modalVisible}

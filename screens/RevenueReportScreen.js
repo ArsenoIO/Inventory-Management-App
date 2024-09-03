@@ -30,7 +30,6 @@ import {
 } from "firebase/firestore";
 import CustomButton from "../components/CustomButton";
 import PaymentMethodSelector from "../components/PaymentMethodSelector";
-import ConfirmationDialog from "../components/ConfirmationDialog";
 
 const RevenueReportScreen = () => {
   const [shoeCode, setShoeCode] = useState("");
@@ -49,9 +48,6 @@ const RevenueReportScreen = () => {
   const [shoeId, setShoeId] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [errors, setErrors] = useState({});
-
-  const [isCheckDialogVisible, setIsCheckDialogVisible] = useState(false);
-  const [isSaveDialogVisible, setIsSaveDialogVisible] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {

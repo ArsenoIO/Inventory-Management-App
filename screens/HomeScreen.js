@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  RefreshControl,
+  View,
+} from "react-native";
 import { doc, getDoc, getDocs, collection } from "firebase/firestore";
 import BranchName from "../components/BranchName";
 import { firestore, auth } from "../firebaseConfig";
@@ -16,38 +22,45 @@ const HomeScreen = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [allBranches, setAllBranches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          const userDoc = await getDoc(doc(firestore, "users", user.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setIsAdmin(userData.userRole === "admin");
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchUserData().then(() => setRefreshing(false));
+  }, []);
 
-            if (userData.userRole === "admin") {
-              // Admin can see all branches
-              const branchesSnapshot = await getDocs(
-                collection(firestore, "branches")
-              );
-              const branches = branchesSnapshot.docs.map(
-                (doc) => doc.data().branchName
-              );
-              setAllBranches(branches);
-            } else {
-              // Normal user sees only their branch
-              setBranchName(userData.branch);
-            }
+  const fetchUserData = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(firestore, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setIsAdmin(userData.userRole === "admin");
+
+          if (userData.userRole === "admin") {
+            // Admin can see all branches
+            const branchesSnapshot = await getDocs(
+              collection(firestore, "branches")
+            );
+            const branches = branchesSnapshot.docs.map(
+              (doc) => doc.data().branchName
+            );
+            setAllBranches(branches);
+          } else {
+            // Normal user sees only their branch
+            setBranchName(userData.branch);
           }
         }
-      } catch (error) {
-        console.error("Error fetching user data: ", error);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching user data: ", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUserData();
   }, []);
 
@@ -60,7 +73,12 @@ const HomeScreen = () => {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {isAdmin ? (
         allBranches.map((branch) => (
           <View key={branch}>
