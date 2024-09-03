@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { getAuth, signOut } from "firebase/auth";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import ConfirmationDialog from "../components/ConfirmationDialog";
+import { BackHandler } from "react-native";
 
 const AccountScreen = () => {
   const [userData, setUserData] = useState(null);
@@ -12,6 +13,27 @@ const AccountScreen = () => {
   const navigation = useNavigation();
   const auth = getAuth();
   const firestore = getFirestore();
+
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert("Анхааруулга", "Та апп-аас гарах уу?", [
+        {
+          text: "Үгүй",
+          onPress: () => null,
+          style: "cancel",
+        },
+        { text: "Тийм", onPress: () => BackHandler.exitApp() },
+      ]);
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -91,7 +113,7 @@ const AccountScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#FFFBFF",
     marginTop: "15%",
     marginRight: "5%",
     marginLeft: "5%",

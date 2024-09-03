@@ -313,7 +313,7 @@ const AddShoeScreen = () => {
         label="Гутлын код"
         value={shoeCode}
         onChangeText={setShoeCode}
-        maxLength={5}
+        maxLength={6}
         mode="outlined"
         style={styles.input}
         error={!!errors.shoeCode}
@@ -452,6 +452,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     marginTop: "10%",
+    backgroundColor: "#FFFBFF",
   },
   input: {
     marginVertical: 10,

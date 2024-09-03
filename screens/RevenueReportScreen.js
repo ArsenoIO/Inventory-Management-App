@@ -339,6 +339,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
+    backgroundColor: "#FFFBFF",
   },
   input: {
     flex: 1, // Make the input take up the remaining space

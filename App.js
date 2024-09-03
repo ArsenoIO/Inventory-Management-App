@@ -4,12 +4,14 @@ import { Provider as PaperProvider } from "react-native-paper";
 import { createStackNavigator } from "@react-navigation/stack";
 import SignInScreen from "./screens/SignInScreen";
 import BottomNav from "./components/BottomNav"; // Шинээр импорт хийх
+import { StatusBar } from "expo-status-bar";
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <PaperProvider>
+      <StatusBar style="dark" />
       <NavigationContainer>
         <Stack.Navigator initialRouteName="SignIn">
           <Stack.Screen
