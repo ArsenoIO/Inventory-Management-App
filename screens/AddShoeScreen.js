@@ -156,7 +156,7 @@ const AddShoeScreen = () => {
   useEffect(() => {
     fetchUserData();
     fetchNames();
-    fetchShoes();
+    //fetchShoes();
   }, []);
 
   const requestPermission = async () => {
@@ -164,7 +164,7 @@ const AddShoeScreen = () => {
       const { status } = {};
       await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        alert("Permission to access media library is required!");
+        // alert("Permission to access media library is required!");
       }
     }
   };
@@ -271,9 +271,9 @@ const AddShoeScreen = () => {
 
       await setDoc(doc(firestore, "shoes", shoeCode), shoeData);
 
-      setShoesList([...shoesList, shoeData]);
+      //setShoesList([...shoesList, shoeData]);
 
-      Alert.alert("Гутал амжилттай нэмэгдлээ!");
+      //Alert.alert("Гутал амжилттай нэмэгдлээ!");
       setShoeName("");
       setShoeCode("");
       setSize("");
@@ -285,7 +285,7 @@ const AddShoeScreen = () => {
     } finally {
       setLoading(false);
     }
-    fetchShoes();
+    //fetchShoes();
   };
 
   const fetchShoes = async () => {
