@@ -1,13 +1,11 @@
-// SignInScreen.js
 import React, { useState } from "react";
-import { StyleSheet, Image, Alert } from "react-native";
+import { StyleSheet, Image, Alert, View, Text } from "react-native";
 import { auth } from "../firebaseConfig";
 import { useNavigation } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import Header from "../components/Header";
-import Background from "../components/Background";
 import TextInput from "../components/TextInput";
 import CustomButton from "../components/CustomButton";
+import { storeUser } from "../services/authService"; // Хэрэглэгчийн статусыг хадгалах
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
@@ -21,17 +19,22 @@ export default function SignInScreen() {
         email,
         password
       );
+      const user = userCredential.user;
+
+      // Хэрэглэгчийн статусыг хадгалах
+      await storeUser(user);
+      // Амжилттай нэвтэрсэн бол Main дэлгэц рүү шилжих
       navigation.navigate("Main");
     } catch (error) {
       console.log(error);
-      Alert.alert("Sign in failed :" + error.message);
+      Alert.alert("Sign in failed: " + error.message);
     }
   };
 
   return (
-    <Background>
+    <View style={styles.container}>
       <Image source={require("../assets/logo.png")} style={styles.logo} />
-      <Header>Орос цаатан</Header>
+      <Text style={styles.header}>Орос цаатан</Text>
       <TextInput
         placeholder="Email"
         returnKeyType="next"
@@ -49,14 +52,27 @@ export default function SignInScreen() {
       <CustomButton mode="contained" onPress={handleSignIn}>
         НЭВТРЭХ
       </CustomButton>
-    </Background>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   logo: {
     width: 110,
     height: 110,
     marginBottom: 8,
+  },
+  header: {
+    fontSize: 30,
+    fontWeight: "bold",
+    paddingVertical: 10,
+    marginBottom: 20,
+    alignSelf: "center",
   },
 });

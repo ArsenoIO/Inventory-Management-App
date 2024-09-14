@@ -1,14 +1,16 @@
-import * as React from "react";
+import React, { useState, useEffect } from "react";
 import { BottomNavigation } from "react-native-paper";
 import HomeScreen from "../screens/HomeScreen";
 import AddShoeScreen from "../screens/AddShoeScreen";
 import RevenueReportScreen from "../screens/RevenueReportScreen";
 import AccountScreen from "../screens/AccountScreen";
+import TripScreen from "../screens/AdminScreen/TripScreen"; // Шинэ Аялал дэлгэц
+import { auth, firestore } from "../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 
 const BottomNav = () => {
-  const [index, setIndex] = React.useState(0);
-
-  const [routes] = React.useState([
+  const [index, setIndex] = useState(0);
+  const [routes, setRoutes] = useState([
     {
       key: "home",
       title: "Эхлэл",
@@ -45,10 +47,42 @@ const BottomNav = () => {
         return <RevenueReportScreen />;
       case "account":
         return <AccountScreen />;
+      case "trip":
+        return <TripScreen />; // Аялал дэлгэцийг харуулна
       default:
         return null;
     }
   };
+
+  // Хэрэглэгчийн мэдээлэл авах ба админ бол маршрутуудыг шинэчлэх
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(firestore, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.userRole === "admin") {
+            setRoutes((prevRoutes) =>
+              prevRoutes.map((route) =>
+                route.key === "addShoe"
+                  ? {
+                      ...route,
+                      key: "trip",
+                      title: "Аялал",
+                      focusedIcon: "airplane",
+                      unfocusedIcon: "airplane",
+                    }
+                  : route
+              )
+            );
+          }
+        }
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   return (
     <BottomNavigation
@@ -56,14 +90,14 @@ const BottomNav = () => {
       onIndexChange={setIndex}
       renderScene={renderScene}
       barStyle={{
-        backgroundColor: "#ffffff",
-        borderTopWidth: 1,
+        backgroundColor: "#FFFBFF",
+        borderTopWidth: 0.7,
         borderTopColor: "#ced4da",
       }}
       activeColor="#ffb703"
+      activeIndicatorStyle={{ backgroundColor: "#FFFBFF" }}
       inactiveColor="#1F1717"
-      shifting={false} // Disable shifting to keep all labels visible
-      sceneAnimationEnabled={false} // Disable animation for a smoother experience
+      sceneAnimationEnabled={false} // Хөдөлгөөнийг хаасан
     />
   );
 };

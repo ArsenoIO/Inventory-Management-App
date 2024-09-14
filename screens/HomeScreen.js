@@ -1,124 +1,120 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  RefreshControl,
-  View,
-} from "react-native";
-import { doc, getDoc, getDocs, collection } from "firebase/firestore";
-import BranchName from "../components/BranchName";
-import { firestore, auth } from "../firebaseConfig";
-import TotalRegisteredShoes from "../components/TotalRegisteredShoes";
-import PriceDistributionChart from "../components/PriceDistributionChart";
-import SizeDistributionChart from "../components/SizeDistributionChart";
-import TotalSoldShoes from "../components/TotalSoldShoes";
-import PaymentMethodChart from "../components/PaymentMethodChart";
-import SoldSizeDistributionChart from "../components/SoldSizeDistributionChart";
+// screens/HomeScreen.js
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import Icon from "react-native-vector-icons/Entypo";
+import BranchButton from "../components/BranchButton";
 import { Divider } from "react-native-paper";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 
 const HomeScreen = () => {
-  const [branchName, setBranchName] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [allBranches, setAllBranches] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchUserData().then(() => setRefreshing(false));
-  }, []);
-
-  const fetchUserData = async () => {
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        const userDoc = await getDoc(doc(firestore, "users", user.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setIsAdmin(userData.userRole === "admin");
-
-          if (userData.userRole === "admin") {
-            // Admin can see all branches
-            const branchesSnapshot = await getDocs(
-              collection(firestore, "branches")
-            );
-            const branches = branchesSnapshot.docs.map(
-              (doc) => doc.data().branchName
-            );
-            setAllBranches(branches);
-          } else {
-            // Normal user sees only their branch
-            setBranchName(userData.branch);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching user data: ", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [branchData, setBranchData] = useState({
+    tuvSalbar: { totalShoe: 0 },
+    uvurkhangaiSalbar: { totalShoe: 0 },
+    bumbugurSalbar: { totalShoe: 0 },
+  });
 
   useEffect(() => {
-    fetchUserData();
+    const fetchBranchData = async () => {
+      const db = getFirestore();
+
+      // Төв салбарын мэдээлэл
+      const tuvSalbarDoc = await getDoc(doc(db, "branches", "tuvSalbar"));
+      const tuvSalbarData = tuvSalbarDoc.exists() ? tuvSalbarDoc.data() : {};
+
+      // Өвөрхангай салбарын мэдээлэл
+      const uvurkhangaiSalbarDoc = await getDoc(
+        doc(db, "branches", "uvSalbar")
+      );
+      const uvurkhangaiSalbarData = uvurkhangaiSalbarDoc.exists()
+        ? uvurkhangaiSalbarDoc.data()
+        : {};
+
+      // Бөмбөгөр салбарын мэдээлэл
+      const bumbugurSalbarDoc = await getDoc(
+        doc(db, "branches", "bumbugurSalbar")
+      );
+      const bumbugurSalbarData = bumbugurSalbarDoc.exists()
+        ? bumbugurSalbarDoc.data()
+        : {};
+
+      setBranchData({
+        tuvSalbar: tuvSalbarData,
+        uvurkhangaiSalbar: uvurkhangaiSalbarData,
+        bumbugurSalbar: bumbugurSalbarData,
+      });
+    };
+
+    fetchBranchData();
   }, []);
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
-
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      {isAdmin ? (
-        allBranches.map((branch) => (
-          <View key={branch}>
-            <BranchName branchName={branch} />
-            <Divider style={styles.divider} />
-            <TotalRegisteredShoes branchName={branch} />
-            <PriceDistributionChart branchName={branch} />
-            <SizeDistributionChart branchName={branch} />
-            <TotalSoldShoes branchName={branch} />
-            <PaymentMethodChart branchName={branch} />
-            <SoldSizeDistributionChart branchName={branch} />
-            <Divider style={styles.divider} />
-          </View>
-        ))
-      ) : (
-        <>
-          <BranchName branchName={branchName} />
-          <Divider style={styles.divider} />
-          <TotalRegisteredShoes branchName={branchName} />
-          <PriceDistributionChart branchName={branchName} />
-          <SizeDistributionChart branchName={branchName} />
-          <TotalSoldShoes branchName={branchName} />
-          <PaymentMethodChart branchName={branchName} />
-          <SoldSizeDistributionChart branchName={branchName} />
-          <Divider style={styles.divider} />
-        </>
-      )}
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.greeting}>Сайн байна уу?, Доржоо</Text>
+      <Divider style={styles.divider} />
+      <View style={styles.section}>
+        <View style={styles.iconAndTitle}>
+          <Icon name="shop" size={30} color="red" style={styles.icon} />
+          <Text style={styles.sectionTitle}>Бүртгэлтэй салбарууд</Text>
+        </View>
+        <View style={styles.buttonContainer}>
+          <BranchButton
+            branchName="ТӨВ САЛБАР"
+            shoeCount={branchData.tuvSalbar.totalShoe || 0}
+            branchScreen="CentralBranch"
+            bgColor="#FF8A65"
+          />
+          <BranchButton
+            branchName="ӨВӨРХАНГАЙ"
+            shoeCount={branchData.uvurkhangaiSalbar.totalShoe || 0}
+            branchScreen="UvurkhangaiBranch"
+            bgColor="#4CAF50"
+          />
+          <BranchButton
+            branchName="БӨМБӨГӨР"
+            shoeCount={branchData.bumbugurSalbar.totalShoe || 0}
+            branchScreen="BumbugurBranch"
+            bgColor="#03A9F4"
+          />
+        </View>
+      </View>
+      <Divider style={styles.divider} />
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
     padding: 20,
-    backgroundColor: "#FFFBFF",
+    backgroundColor: "#ffffff",
     marginTop: "10%",
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  iconAndTitle: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
   },
   divider: {
     marginVertical: 5,
+  },
+  icon: {
+    marginRight: 10,
+  },
+  section: {
+    marginBottom: 40,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
 });
 

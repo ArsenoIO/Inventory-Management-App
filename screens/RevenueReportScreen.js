@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Image,
@@ -30,6 +30,7 @@ import {
 } from "firebase/firestore";
 import CustomButton from "../components/CustomButton";
 import PaymentMethodSelector from "../components/PaymentMethodSelector";
+import useUserData from "../hooks/useUserData"; // Custom Hook ашиглаж байна
 
 const RevenueReportScreen = () => {
   const [shoeCode, setShoeCode] = useState("");
@@ -43,28 +44,12 @@ const RevenueReportScreen = () => {
   const [totalAmount, setTotalAmount] = useState(0);
   const [soldShoes, setSoldShoes] = useState([]);
 
-  const [userData, setUserData] = useState(null);
+  const { userData, loading: userLoading, error: userError } = useUserData();
+
   const [documentId, setDocumentId] = useState("");
   const [shoeId, setShoeId] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [errors, setErrors] = useState({});
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          const userDoc = await getDoc(doc(firestore, "users", user.uid));
-          if (userDoc.exists()) {
-            setUserData(userDoc.data());
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching user data: ", error);
-      }
-    };
-    fetchUserData();
-  }, []);
 
   const validateForm = () => {
     let valid = true;

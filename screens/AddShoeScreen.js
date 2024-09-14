@@ -10,7 +10,7 @@ import {
   Modal,
   RefreshControl,
 } from "react-native";
-import { firestore, storage, auth } from "../firebaseConfig";
+import { firestore, storage } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
   doc,
@@ -25,7 +25,7 @@ import {
   query,
   where,
   deleteDoc,
-} from "firebase/firestore"; // getDocs функц нэмэх
+} from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import CustomButton from "../components/CustomButton";
 import Text from "../components/Text";
@@ -36,8 +36,10 @@ import {
   DataTable,
 } from "react-native-paper";
 import ModalSelector from "react-native-modal-selector";
+import useUserData from "../hooks/useUserData"; // Custom Hook ашиглаж байна
+import ShoeTable from "../components/ShoeTable";
 
-const EditModal = ({ visible, onClose, onEdit, onDelete }) => {
+const EditModal = ({ visible, onClose, onDelete }) => {
   return (
     <Modal
       visible={visible}
@@ -66,21 +68,20 @@ const EditModal = ({ visible, onClose, onEdit, onDelete }) => {
 };
 
 const AddShoeScreen = () => {
+  const { userData, loading: userLoading, error } = useUserData(); // Custom hook ашиглаж байна
   const [selectedImage, setSelectedImage] = useState(null);
   const [shoeCode, setShoeCode] = useState("");
   const [shoeName, setShoeName] = useState("");
   const [size, setSize] = useState("");
   const [price, setPrice] = useState("");
-  const [addedUserID, setAddedUserID] = useState("");
-  const [addedBranch, setAddedBranch] = useState("");
-  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [shoesList, setShoesList] = useState([]); // Бүх гутлын мэдээллийг хадгалах төлөв
+
+  const [shoesList, setShoesList] = useState([]);
+  const [showTable, setShowTable] = useState(false);
+
   const [selectedShoe, setSelectedShoe] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [errors, setErrors] = useState({});
-  const [showTable, setShowTable] = useState(false);
-
   const [names, setNames] = useState([]);
   const [selectedCode, setSelectedCode] = useState(null);
 
@@ -88,7 +89,7 @@ const AddShoeScreen = () => {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchUserData().then(() => setRefreshing(false));
+    fetchNames().then(() => setRefreshing(false));
   }, []);
 
   const handleLongPress = (shoe) => {
@@ -132,39 +133,16 @@ const AddShoeScreen = () => {
     }
   };
 
-  const fetchUserData = async () => {
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        const userDoc = await getDoc(doc(firestore, "users", user.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUserData(userData);
-          setAddedUserID(userData.userName);
-          setAddedBranch(userData.branch);
-        } else {
-          console.log("No such document! Printing addshoeScreem from");
-        }
-      } else {
-        console.log("No user is logged in!");
-      }
-    } catch (error) {
-      console.error("Error fetching user data: ", error);
-    }
-  };
-
   useEffect(() => {
-    fetchUserData();
     fetchNames();
-    //fetchShoes();
   }, []);
 
   const requestPermission = async () => {
     if (Platform.OS !== "web") {
-      const { status } = {};
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        // alert("Permission to access media library is required!");
+        Alert.alert("Зургийн сан руу хандах зөвшөөрөл хэрэгтэй байна!");
       }
     }
   };
@@ -184,7 +162,7 @@ const AddShoeScreen = () => {
   const openCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      alert("Permission to access camera is required!");
+      Alert.alert("Камер руу хандах зөвшөөрөл хэрэгтэй байна!");
       return;
     }
 
@@ -271,9 +249,6 @@ const AddShoeScreen = () => {
 
       await setDoc(doc(firestore, "shoes", shoeCode), shoeData);
 
-      //setShoesList([...shoesList, shoeData]);
-
-      //Alert.alert("Гутал амжилттай нэмэгдлээ!");
       setShoeName("");
       setShoeCode("");
       setSize("");
@@ -285,7 +260,6 @@ const AddShoeScreen = () => {
     } finally {
       setLoading(false);
     }
-    //fetchShoes();
   };
 
   const fetchShoes = async () => {
@@ -335,6 +309,9 @@ const AddShoeScreen = () => {
           labelColor="white"
         />
       </View>
+      {loading && (
+        <ProgressBar indeterminate color="#CE5A67" style={styles.progress} />
+      )}
       <PaperTextInput
         label="Гутлын код"
         value={shoeCode}
@@ -386,8 +363,7 @@ const AddShoeScreen = () => {
 
       <PaperTextInput
         label="Хэрэглэгч"
-        value={addedUserID}
-        onChangeText={setAddedUserID}
+        value={userData ? userData.userName : ""}
         mode="outlined"
         style={[styles.input, { backgroundColor: "#f5ebe0" }]}
         editable={false}
@@ -395,8 +371,7 @@ const AddShoeScreen = () => {
 
       <PaperTextInput
         label="Бүртгэсэн хаяг"
-        value={addedBranch}
-        onChangeText={setAddedBranch}
+        value={userData ? userData.branch : ""}
         mode="outlined"
         style={[styles.input, { backgroundColor: "#f5ebe0" }]}
         editable={false}
@@ -413,66 +388,16 @@ const AddShoeScreen = () => {
         </CustomButton>
       </View>
 
-      {loading && (
-        <ProgressBar indeterminate color="#CE5A67" style={styles.progress} />
-      )}
-
-      <Button
+      <CustomButton
+        mode="contained"
+        icon="plus"
         title={showTable ? "Хүснэгтийг нуух" : "Хүснэгт харуулах"}
         onPress={() => setShowTable(!showTable)}
       />
-      {showTable && (
-        <ScrollView horizontal={true}>
-          <DataTable>
-            <DataTable.Header>
-              <DataTable.Title style={styles.tableTitle}>
-                Гутлын Код
-              </DataTable.Title>
-              <DataTable.Title style={styles.tableTitle}>Нэр</DataTable.Title>
-              <DataTable.Title numeric style={styles.tableTitle}>
-                Размер
-              </DataTable.Title>
-              <DataTable.Title numeric style={styles.tableTitle}>
-                Үнэ
-              </DataTable.Title>
-              <DataTable.Title style={styles.tableTitle}>
-                Салбар
-              </DataTable.Title>
-              <DataTable.Title style={styles.tableTitle}>
-                Хэрэглэгч
-              </DataTable.Title>
-            </DataTable.Header>
 
-            {shoesList.map((shoe, index) => (
-              <DataTable.Row
-                key={index}
-                onLongPress={() => handleLongPress(shoe)}
-                style={styles.tableRow}
-              >
-                <DataTable.Cell style={styles.tableCell}>
-                  {shoe.shoeCode}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.tableCell}>
-                  {shoe.shoeName}
-                </DataTable.Cell>
-                <DataTable.Cell numeric style={styles.tableCell}>
-                  {shoe.shoeSize}
-                </DataTable.Cell>
-                <DataTable.Cell numeric style={styles.tableCell}>
-                  {shoe.shoePrice}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.tableCell}>
-                  {shoe.addedBranch}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.tableCell}>
-                  {shoe.addedUserID}
-                </DataTable.Cell>
-              </DataTable.Row>
-            ))}
-          </DataTable>
-        </ScrollView>
+      {showTable && (
+        <ShoeTable shoesList={shoesList} handleLongPress={handleLongPress} />
       )}
-      {/* DataTable хэсэг */}
 
       <EditModal
         visible={modalVisible}
@@ -550,13 +475,6 @@ const styles = StyleSheet.create({
     width: "80%",
     borderRadius: 50, // Make it fully rounded
     justifyContent: "center",
-  },
-  modalSelector: {
-    flex: 1,
-    backgroundColor: "transparent",
-    borderColor: "black",
-    height: 40,
-    marginVertical: 10,
   },
 });
 

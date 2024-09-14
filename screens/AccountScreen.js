@@ -1,29 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, SafeAreaView } from "react-native";
+import { View, StyleSheet, SafeAreaView, BackHandler } from "react-native";
 import { Text, Button, Avatar, Divider } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { getAuth, signOut } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
 import ConfirmationDialog from "../components/ConfirmationDialog";
-import { BackHandler } from "react-native";
+import { removeUser } from "../services/authService";
+import useUserData from "../hooks/useUserData"; // Custom Hook ашиглаж байна
 
 const AccountScreen = () => {
-  const [userData, setUserData] = useState(null);
+  const { userData, loading, error } = useUserData(); // Custom hook ашиглан хэрэглэгчийн өгөгдөл авах
   const [dialogVisible, setDialogVisible] = useState(false);
+  const [exitDialogVisible, setExitDialogVisible] = useState(false); // BackHandler-ийн диалог
   const navigation = useNavigation();
   const auth = getAuth();
-  const firestore = getFirestore();
 
   useEffect(() => {
     const backAction = () => {
-      Alert.alert("Анхааруулга", "Та апп-аас гарах уу?", [
-        {
-          text: "Үгүй",
-          onPress: () => null,
-          style: "cancel",
-        },
-        { text: "Тийм", onPress: () => BackHandler.exitApp() },
-      ]);
+      setExitDialogVisible(true); // Апп-аас гарах үед диалог харуулна
       return true;
     };
 
@@ -35,31 +28,36 @@ const AccountScreen = () => {
     return () => backHandler.remove();
   }, []);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const userId = auth.currentUser.uid;
-      const userDocRef = doc(firestore, "users", userId);
-      const userDoc = await getDoc(userDocRef);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth); // Firebase-аас гаргах
+      await removeUser(); // AsyncStorage-аас хэрэглэгчийн өгөгдлийг устгах
 
-      if (userDoc.exists()) {
-        setUserData(userDoc.data());
-      } else {
-        console.log("No such document!");
-      }
-    };
-
-    fetchUserData();
-  }, [auth, firestore]);
-
-  const handleLogout = () => {
-    signOut(auth)
-      .then(() => {
-        navigation.replace("SignIn");
-      })
-      .catch((error) => {
-        console.error("Error signing out: ", error);
-      });
+      setDialogVisible(false); // ConfirmationDialog-г хаах
+      navigation.replace("SignIn"); // SignIn рүү шилжүүлэх
+    } catch (error) {
+      console.error("Error signing out: ", error);
+    }
   };
+
+  const handleBackExit = async () => {
+    try {
+      await signOut(auth); // Firebase-аас гаргах
+      await removeUser(); // AsyncStorage-аас хэрэглэгчийн өгөгдлийг устгах
+      setExitDialogVisible(false); // Диалогыг хаах
+      navigation.replace("SignIn"); // SignIn рүү шилжүүлэх
+    } catch (error) {
+      console.error("Error signing out on back press: ", error);
+    }
+  };
+
+  if (loading) {
+    return <Text>Ачааллаж байна...</Text>;
+  }
+
+  if (error) {
+    return <Text>{error}</Text>;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -99,12 +97,22 @@ const AccountScreen = () => {
         Logout
       </Button>
 
+      {/* Logout хийх үед харуулах ConfirmationDialog */}
       <ConfirmationDialog
         visible={dialogVisible}
         onDismiss={() => setDialogVisible(false)}
         onConfirm={handleLogout}
         title="Анхааруулга"
         content="Та Апп-аас гарахдаа итгэлтэй байна уу?"
+      />
+
+      {/* BackHandler ашиглан апп-аас гарахыг асуух ConfirmationDialog */}
+      <ConfirmationDialog
+        visible={exitDialogVisible}
+        onDismiss={() => setExitDialogVisible(false)}
+        onConfirm={handleBackExit} // Back дарахад SignIn рүү буцдаг болгож өөрчлөх
+        title="Анхааруулга"
+        content="Та апп-аас гарахдаа итгэлтэй байна уу?"
       />
     </SafeAreaView>
   );
@@ -128,7 +136,7 @@ const styles = StyleSheet.create({
   },
   profileIcon: {
     marginRight: 10,
-    backgroundColor: "#CE5A67",
+    backgroundColor: "#03A9F4",
   },
   name: {
     fontSize: 24,
