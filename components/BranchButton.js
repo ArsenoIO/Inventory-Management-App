@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   },
   branchName: {
     flex: 1,
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#fff",
     textAlign: "center",

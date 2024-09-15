@@ -1,74 +1,137 @@
 import React, { useState } from "react";
-import { View, Text, Button, StyleSheet } from "react-native";
-import OtherExpenseModal from "../../components/Modal/OtherExpenseModal";
+import {
+  View,
+  Text,
+  Button,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { updateDoc, getFirestore, doc } from "firebase/firestore";
+import OtherExpenseModal from "../../components/Modal/OtherExpenseModal";
 
 const TripDetailScreen = ({ route }) => {
-  const { trip } = route.params; // TripScreen-с дамжуулсан аяллын мэдээлэл
+  const { trip } = route.params; // trip массив байж магадгүй тул доорх байдлаар авна
+  const tripData = trip[0]; // Массивын эхний объект болох tripData-г авна
+  console.log(tripData.initialAmount);
+  console.log(tripData);
+  console.log(tripData.expensesAmount);
+  console.log(tripData.id);
+  console.log(tripData.otherExpensesAmount);
+  console.log(tripData.startDate);
+  console.log(tripData.totalShoes);
   const [modalVisible, setModalVisible] = useState(false);
-  const [otherExpenses, setOtherExpenses] = useState(trip.otherExpenses || []); // otherExpenses байхгүй бол хоосон массив
-  const navigation = useNavigation(); // Navigation ашиглах
+  const [otherExpenses, setOtherExpenses] = useState(
+    tripData.otherExpenses || []
+  );
+  const navigation = useNavigation();
 
-  // Бусад зардал нэмэх функц
-  const handleAddOtherExpense = (description, amount) => {
-    const newExpense = { description, amount: parseFloat(amount) };
+  // `startDate`-г Timestamp эсвэл Date эсэхийг шалгах
+  const formattedStartDate = tripData.startDate
+    ? tripData.startDate.toDate
+      ? tripData.startDate.toDate().toLocaleDateString()
+      : new Date(tripData.startDate).toLocaleDateString()
+    : "Огноо байхгүй байна";
+
+  // Зарцуулалтын функц
+  const handleAddOtherExpense = (detail, amount, description) => {
+    const newExpense = { detail, amount: parseFloat(amount), description };
     setOtherExpenses([...otherExpenses, newExpense]);
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Аялал: {trip.startDate}</Text>
-      <Text style={styles.detailText}>
-        Анхны мөнгөн дүн: {trip.initialAmount}
-      </Text>
-      <Text style={styles.detailText}>Үлдэгдэл: {trip.balanceAmount}</Text>
-      <Text style={styles.detailText}>Зарцуулсан дүн: {trip.spentAmount}</Text>
+  // Аяллыг дуусгах функц
+  const handleFinishTrip = async () => {
+    const firestore = getFirestore();
+    const tripDocRef = doc(firestore, "trips", tripData.id);
 
-      <View style={styles.expenseButtons}>
+    try {
+      await updateDoc(tripDocRef, {
+        status: false, // Аяллын төлөвийг идэвхгүй болгоно
+      });
+      Alert.alert("Амжилттай", "Аяллыг амжилттай дуусгалаа");
+      navigation.goBack(); // Аялал руу буцах
+    } catch (error) {
+      console.error("Алдаа: ", error);
+      Alert.alert("Алдаа", "Аяллыг дуусгах үед алдаа гарлаа");
+    }
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      {/* Аяллын огноо */}
+      <Text style={styles.title}>Аялал: {formattedStartDate}</Text>
+
+      {/* Анхны мөнгөн дүн, үлдэгдэл, зарцуулсан дүн */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoText}>
+          Анхны мөнгөн дүн: {tripData.initialAmount}
+        </Text>
+        <Text style={styles.infoText}>Үлдэгдэл: {tripData.balanceAmount}</Text>
+        <Text style={styles.infoText}>
+          Зарцуулсан дүн: {tripData.expensesAmount}
+        </Text>
+      </View>
+
+      {/* Гутал худалдан авах болон бусад зардал товчууд */}
+      <View style={styles.buttonContainer}>
         <Button
           title="Гутал худалдан авах"
-          onPress={() => navigation.navigate("ShoePurchaseScreen")} // Дэлгэц рүү шилжих
+          onPress={() =>
+            navigation.navigate("ShoePurchaseScreen", { tripId: tripData.id })
+          } // trip.id-г дамжуулж байна
           color="#6a1b9a"
         />
+
         <Button
           title="Бусад зардал"
           onPress={() => setModalVisible(true)}
           color="#2196f3"
         />
       </View>
-      {/* Зарцуулсан гутлын зардлууд */}
+
+      {/* Гутал худалдан авсан зардлуудын жагсаалт */}
       <View style={styles.expenseSection}>
-        <Text style={styles.sectionTitle}>Гутлын зардал</Text>
-        {/* shoeExpenses байхгүй бол хоосон массив болгож ашиглах */}
-        {(trip.shoeExpenses || []).map((expense, index) => (
-          <View key={index} style={styles.expenseItem}>
-            <Text>Нийлүүлэгч: {expense.supplier}</Text>
-            <Text>Аван гутал: {expense.shoesCount}</Text>
-            <Text>Үнэ: {expense.price}</Text>
-            <Button title="Дэлгэрэнгүй" onPress={() => {}} />
-          </View>
-        ))}
+        <Text style={styles.sectionTitle}>Гутал худалдан авалт</Text>
+        {tripData.shoeExpenses && tripData.shoeExpenses.length > 0 ? (
+          tripData.shoeExpenses.map((expense, index) => (
+            <View key={index} style={styles.expenseItem}>
+              <Text>Нийлүүлэгч: {expense.supplier}</Text>
+              <Text>Гутлын тоо: {expense.shoesCount}</Text>
+              <Text>Үнэ: {expense.price}</Text>
+            </View>
+          ))
+        ) : (
+          <Text>Гутал худалдан авсан зардал алга байна</Text>
+        )}
       </View>
 
-      {/* Бусад зардлууд */}
+      {/* Бусад зардлуудын жагсаалт */}
       <View style={styles.expenseSection}>
         <Text style={styles.sectionTitle}>Бусад зардал</Text>
         {otherExpenses.map((expense, index) => (
           <View key={index} style={styles.expenseItem}>
-            <Text>Тайлбар: {expense.description}</Text>
+            <Text>Утга: {expense.detail}</Text>
             <Text>Мөнгөн дүн: {expense.amount}</Text>
           </View>
         ))}
       </View>
 
+      {/* Бусад зардал оруулах Modal */}
       <OtherExpenseModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onSave={handleAddOtherExpense}
       />
 
-      <Button title="Аялал дуусгах" onPress={() => {}} color="#d32f2f" />
-    </View>
+      {/* Аялал дуусгах товч */}
+      <Button
+        title="Аялал дуусгах"
+        onPress={handleFinishTrip}
+        color="#d32f2f"
+        style={styles.finishButton}
+      />
+    </ScrollView>
   );
 };
 
@@ -83,14 +146,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
+    color: "red",
     marginBottom: 20,
-    color: "#CE5A67",
   },
-  detailText: {
-    fontSize: 16,
+  infoContainer: {
+    marginBottom: 20,
+  },
+  infoText: {
+    fontSize: 18,
     marginBottom: 10,
   },
-  expenseButtons: {
+  buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 20,
@@ -109,5 +175,8 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     borderRadius: 5,
     marginBottom: 10,
+  },
+  finishButton: {
+    marginTop: 20,
   },
 });

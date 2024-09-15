@@ -63,7 +63,7 @@ const TripScreen = () => {
             <Button
               title="Дэлгэрэнгүй"
               color={"#FF6969"}
-              onPress={() => handlePressDetail(trip)}
+              onPress={() => handlePressDetail(trips)}
             />
           </View>
         ))}
