@@ -29,7 +29,7 @@ const MainScreen = () => {
         />
         <MainButton
           title="ОРЛОГЫН ТАЙЛАН ИЛГЭЭХ"
-          onPress={() => navigation.navigate("RevenueReportScreen")}
+          onPress={() => navigation.navigate("SalesReportScreen")}
           bgColor="#FF5757"
           iconSource={require("../assets/reportDaily.png")}
         />

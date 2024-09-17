@@ -20,6 +20,9 @@ import ShoeDetailScreen from "../screens/ShoeDetailScreen";
 import CentralBranchScreen from "../screens/BranchDetailScreen/CentralBranchScreen";
 import UvurkhangaiBranch from "../screens/BranchDetailScreen/UvurkhangaiBranchScreen";
 import BumbugurBranch from "../screens/BranchDetailScreen/BumbugurBranchScreen";
+import SalesReportScreen from "../screens/SalesReportScreen";
+import SalesDetailScreen from "../screens/SalesDetailScreen";
+import IncomeAddScreen from "../screens/IncomeAddScreen";
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
@@ -207,6 +210,57 @@ const MainStackNavigator = () => {
         component={UvurkhangaiBranch}
         options={{
           title: "Аялалын мэдээлэл",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="SalesReportScreen"
+        component={SalesReportScreen}
+        options={{
+          title: "Орлогын тайлан",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="SalesDetailScreen"
+        component={SalesDetailScreen}
+        options={{
+          title: "Орлогын тайлан",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="IncomeAddScreen"
+        component={IncomeAddScreen}
+        options={{
+          title: "Орлогын тайлан",
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
               <FontAwesome
