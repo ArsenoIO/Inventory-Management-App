@@ -5,6 +5,7 @@ import Icon from "react-native-vector-icons/Entypo";
 import BranchButton from "../components/BranchButton";
 import { Divider } from "react-native-paper";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { useNavigation } from "@react-navigation/native";
 
 const HomeScreen = () => {
   const [branchData, setBranchData] = useState({
@@ -12,6 +13,7 @@ const HomeScreen = () => {
     uvurkhangaiSalbar: { totalShoe: 0 },
     bumbugurSalbar: { totalShoe: 0 },
   });
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchBranchData = async () => {
@@ -49,7 +51,6 @@ const HomeScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.greeting}>Сайн байна уу?, Доржоо</Text>
       <Divider style={styles.divider} />
       <View style={styles.section}>
         <View style={styles.iconAndTitle}>
@@ -61,18 +62,21 @@ const HomeScreen = () => {
             branchName="ТӨВ САЛБАР"
             shoeCount={branchData.tuvSalbar.totalShoe || 0}
             branchScreen="CentralBranch"
+            onPress={() => navigation.navigate("CentralBranch")}
             bgColor="#FF8A65"
           />
           <BranchButton
             branchName="ӨВӨРХАНГАЙ"
             shoeCount={branchData.uvurkhangaiSalbar.totalShoe || 0}
             branchScreen="UvurkhangaiBranch"
+            onPress={() => navigation.navigate("UvurkhangaiBranch")}
             bgColor="#4CAF50"
           />
           <BranchButton
             branchName="БӨМБӨГӨР"
             shoeCount={branchData.bumbugurSalbar.totalShoe || 0}
             branchScreen="BumbugurBranch"
+            onPress={() => navigation.navigate("BumbugurBranch")}
             bgColor="#03A9F4"
           />
         </View>
@@ -85,13 +89,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    backgroundColor: "#ffffff",
-    marginTop: "10%",
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
+    backgroundColor: "#F5F5F5",
   },
   iconAndTitle: {
     flexDirection: "row",

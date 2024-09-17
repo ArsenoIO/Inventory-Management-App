@@ -185,7 +185,7 @@ const RevenueReportScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, marginTop: "10%" }}
+      style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.container}>
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: "#FFFBFF",
+    backgroundColor: "#F5F5F5",
   },
   input: {
     flex: 1, // Make the input take up the remaining space

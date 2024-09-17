@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Button } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Button,
+  Alert,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import TripButton from "../../components/TripButton";
 import NewTripModal from "../../components/Modal/NewTripModal";
 import { getFirestore, collection, getDocs } from "firebase/firestore"; // Firestore функцууд
+import useUserData from "../../hooks/useUserData"; // Хэрэглэгчийн өгөгдлийг авах custom hook
 
 const TripScreen = () => {
   const [tripId, setTripId] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [trips, setTrips] = useState([]); // Firestore-оос татах аяллын өгөгдлийг хадгалах
   const navigation = useNavigation();
+  const { userData, loading, error } = useUserData(); // Custom hook ашиглаж байна
 
   // Firestore-оос аяллуудыг татах функц
   const fetchTrips = async () => {
@@ -24,8 +33,25 @@ const TripScreen = () => {
   };
 
   useEffect(() => {
-    fetchTrips(); // Компонент ачаалагдах үед аяллуудыг татах
-  }, []);
+    if (!loading && userData) {
+      // Хэрэв хэрэглэгч admin бол аяллуудыг татаж байна
+      if (userData.userRole === "admin") {
+        fetchTrips(); // Компонент ачаалагдах үед аяллуудыг татах
+      } else {
+        // Хэрэв хэрэглэгч admin биш бол хандалтын эрхгүй анхааруулга гаргана
+        Alert.alert(
+          "Хандах эрхгүй",
+          "Танд аяллын мэдээлэлд хандах эрх байхгүй байна.",
+          [
+            {
+              text: "OK",
+              onPress: () => navigation.goBack(), // Хэрэглэгчийг буцаах
+            },
+          ]
+        );
+      }
+    }
+  }, [userData, loading]);
 
   // Шинэ аялал үүсгэх функцыг дуудаж байна
   const handleCreateTrip = async (startDate, initialAmount) => {
@@ -63,7 +89,7 @@ const TripScreen = () => {
             <Button
               title="Дэлгэрэнгүй"
               color={"#FF6969"}
-              onPress={() => handlePressDetail(trips)}
+              onPress={() => handlePressDetail(trip)} // Зөвхөн тухайн trip-ийг дамжуулах
             />
           </View>
         ))}
@@ -84,8 +110,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    marginTop: "10%",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#F5F5F5",
   },
   header: {
     flexDirection: "row",

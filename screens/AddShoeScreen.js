@@ -6,9 +6,8 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Text,
   Button,
-  Modal,
-  RefreshControl,
 } from "react-native";
 import { firestore, storage } from "../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
@@ -19,123 +18,28 @@ import {
   Timestamp,
   getFirestore,
 } from "firebase/firestore";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  deleteDoc,
-} from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import CustomButton from "../components/CustomButton";
-import Text from "../components/Text";
-import CustomFAB from "../components/FabButton";
-import {
-  TextInput as PaperTextInput,
-  ProgressBar,
-  DataTable,
-} from "react-native-paper";
+import NameSelector from "../components/NameSelector";
+import { TextInput as PaperTextInput, ProgressBar } from "react-native-paper";
 import ModalSelector from "react-native-modal-selector";
 import useUserData from "../hooks/useUserData"; // Custom Hook ашиглаж байна
-import ShoeTable from "../components/ShoeTable";
-
-const EditModal = ({ visible, onClose, onDelete }) => {
-  return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Мэдээллийг шинэчлэх</Text>
-
-          <CustomButton
-            mode="contained"
-            onPress={onDelete}
-            style={styles.modalButton}
-          >
-            Устгах
-          </CustomButton>
-          <CustomButton mode="text" onPress={onClose}>
-            Болих
-          </CustomButton>
-        </View>
-      </View>
-    </Modal>
-  );
-};
 
 const AddShoeScreen = () => {
   const { userData, loading: userLoading, error } = useUserData(); // Custom hook ашиглаж байна
+
   const [selectedImage, setSelectedImage] = useState(null);
   const [shoeCode, setShoeCode] = useState("");
   const [shoeName, setShoeName] = useState("");
   const [size, setSize] = useState("");
   const [price, setPrice] = useState("");
+
   const [loading, setLoading] = useState(false);
 
-  const [shoesList, setShoesList] = useState([]);
-  const [showTable, setShowTable] = useState(false);
-
-  const [selectedShoe, setSelectedShoe] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
   const [errors, setErrors] = useState({});
-  const [names, setNames] = useState([]);
-  const [selectedCode, setSelectedCode] = useState(null);
 
-  const db = getFirestore();
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchNames().then(() => setRefreshing(false));
-  }, []);
-
-  const handleLongPress = (shoe) => {
-    setSelectedShoe(shoe);
-    setModalVisible(true);
-  };
-
-  const handleDelete = async () => {
-    setModalVisible(false);
-    try {
-      await deleteDoc(doc(firestore, "shoes", selectedShoe.shoeCode));
-      setShoesList(
-        shoesList.filter((shoe) => shoe.shoeCode !== selectedShoe.shoeCode)
-      );
-      Alert.alert("Гутал амжилттай устгагдлаа!");
-    } catch (error) {
-      Alert.alert("Гутал устгахад алдаа гарлаа: ", error.message);
-    }
-  };
-
-  const fetchNames = async () => {
-    try {
-      const namesCollection = collection(db, "names");
-      const nameSnapshot = await getDocs(namesCollection);
-
-      if (nameSnapshot.empty) {
-        Alert.alert("Өгөгдлийн сангаас нэрүүд олдсонгүй.");
-        return;
-      }
-
-      const nameList = nameSnapshot.docs.map((doc) => ({
-        key: doc.id,
-        label: doc.data().nameDetail
-          ? `${doc.id} - ${doc.data().nameDetail}`
-          : `${doc.id} - Null`,
-      }));
-      setNames(nameList);
-    } catch (error) {
-      console.error("Error fetching names: ", error);
-      Alert.alert("Өгөгдлийн сангаас нэр татаж авахад алдаа гарлаа.");
-    }
-  };
-
-  useEffect(() => {
-    fetchNames();
-  }, []);
+  useEffect(() => {}, []);
 
   const requestPermission = async () => {
     if (Platform.OS !== "web") {
@@ -262,27 +166,6 @@ const AddShoeScreen = () => {
     }
   };
 
-  const fetchShoes = async () => {
-    try {
-      const q = query(
-        collection(firestore, "shoes"),
-        where("isSold", "==", false)
-      );
-      const querySnapshot = await getDocs(q);
-      const shoes = [];
-      querySnapshot.forEach((doc) => {
-        shoes.push({
-          ...doc.data(),
-          shoeCode: doc.id,
-        });
-      });
-      setShoesList(shoes);
-    } catch (error) {
-      console.error("Error fetching shoes: ", error);
-      Alert.alert("Гутлуудыг татах явцад алдаа гарлаа.");
-    }
-  };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {selectedImage && (
@@ -293,20 +176,22 @@ const AddShoeScreen = () => {
         />
       )}
       <View style={styles.row}>
-        <CustomFAB
+        <CustomButton
           icon="file"
           label="Файлаас сонгох"
           onPress={openImagePicker}
           mode="elevated"
           labelColor="black"
+          style={{ width: "50%" }}
         />
 
-        <CustomFAB
+        <CustomButton
           icon="camera"
           label="Камер ашиглах"
           onPress={openCamera}
           mode="elevated"
           labelColor="white"
+          style={{ width: "50%" }}
         />
       </View>
       {loading && (
@@ -325,13 +210,7 @@ const AddShoeScreen = () => {
         <Text style={styles.errorText}>{errors.shoeCode}</Text>
       )}
 
-      <ModalSelector
-        data={names}
-        initValue="Код сонгоно уу"
-        onChange={(option) => {
-          setShoeName(option.key);
-        }}
-      />
+      <NameSelector selectedName={shoeName} onSelect={setShoeName} />
 
       {errors.shoeName && (
         <Text style={styles.errorText}>{errors.shoeName}</Text>
@@ -387,23 +266,6 @@ const AddShoeScreen = () => {
           ГУТАЛ БҮРТГЭХ
         </CustomButton>
       </View>
-
-      <CustomButton
-        mode="contained"
-        icon="plus"
-        title={showTable ? "Хүснэгтийг нуух" : "Хүснэгт харуулах"}
-        onPress={() => setShowTable(!showTable)}
-      />
-
-      {showTable && (
-        <ShoeTable shoesList={shoesList} handleLongPress={handleLongPress} />
-      )}
-
-      <EditModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onDelete={handleDelete}
-      />
     </ScrollView>
   );
 };
@@ -412,8 +274,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    marginTop: "10%",
-    backgroundColor: "#FFFBFF",
+    backgroundColor: "#F5F5F5",
   },
   input: {
     marginVertical: 10,
@@ -441,40 +302,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  tableTitle: {
-    paddingHorizontal: 10, // Багана хоорондын зайг нэмэгдүүлнэ
-    textAlign: "center", // Текстийг голлуулж харуулна
-  },
-  tableCell: {
-    paddingHorizontal: 10, // Багана хоорондын зайг нэмэгдүүлнэ
-    textAlign: "center", // Текстийг голлуулж харуулна
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContainer: {
-    width: 300,
-    padding: 20,
-    backgroundColor: "white",
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-  modalButton: {
-    width: "100%",
-  },
-  fab: {
-    width: "80%",
-    borderRadius: 50, // Make it fully rounded
-    justifyContent: "center",
   },
 });
 
