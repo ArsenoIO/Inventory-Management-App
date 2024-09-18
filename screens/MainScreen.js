@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import MainButton from "../components/MainButton"; // MainButton-г импортолж байна
 import { useNavigation } from "@react-navigation/native";
 
@@ -9,6 +9,7 @@ const MainScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.buttonContainer}>
+        <Text>This is 3.0.4 version</Text>
         <MainButton
           title="САЛБАРУУДЫН МЭДЭЭЛЭЛ"
           onPress={() => navigation.navigate("HomeScreen")}

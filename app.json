@@ -2,7 +2,7 @@
   "expo": {
     "name": "Орос Цаатан",
     "slug": "InventoryManagementApp",
-    "version": "3.0.0",
+    "version": "3.0.4",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
@@ -35,7 +35,7 @@
     },
     "updates": {
       "url": "https://u.expo.dev/21bf6dd1-1b63-49a9-a382-1d80db771f85",
-      "enabled": true, 
+      "enabled": true,
       "checkAutomatically": "ON_LOAD"
     }
   }
