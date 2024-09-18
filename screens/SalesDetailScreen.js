@@ -13,6 +13,8 @@ import {
   getFirestore,
   collection,
   getDocs,
+  getDoc,
+  doc,
   query,
   where,
 } from "firebase/firestore";
@@ -20,7 +22,6 @@ import { AntDesign } from "@expo/vector-icons"; // For the add button
 
 const SalesDetailScreen = ({ route, navigation }) => {
   const { salesReport } = route.params; // route-аас salesReport дамжуулсан утгыг авна
-  console.log(salesReport);
   const [salesDetails, setSalesDetails] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -41,11 +42,8 @@ const SalesDetailScreen = ({ route, navigation }) => {
     // Гутлын сангаас дэлгэрэнгүй мэдээллийг татах
     const shoeDetails = await Promise.all(
       salesDetailList.map(async (detail) => {
-        const shoeDoc = await getDocs(
-          collection(db, "shoes"),
-          where("shoeCode", "==", detail.shoeCode)
-        );
-        const shoeData = shoeDoc.docs[0]?.data(); // Эхний таарсан гутлыг авна
+        const shoeDoc = await getDoc(doc(db, "shoes", detail.shoeCode)); // getDoc ашиглаж байна
+        const shoeData = shoeDoc.exists() ? shoeDoc.data() : {}; // shoeCode-г ашиглан мэдээллийг авна
         return { ...detail, ...shoeData };
       })
     );
@@ -61,7 +59,6 @@ const SalesDetailScreen = ({ route, navigation }) => {
   const handleAddIncome = () => {
     // Орлого нэмэх дэлгэц рүү шилжих
     navigation.navigate("IncomeAddScreen", { salesReport });
-    console.log(salesReport);
   };
 
   return (
@@ -98,6 +95,8 @@ const SalesDetailScreen = ({ route, navigation }) => {
                   <Text>Үнийн дүн: {detail.shoePrice}₮</Text>
                   <Text>Размер: {detail.shoeSize}</Text>
                   <Text>Зарагдсан эсэх: {detail.isSold ? "Тийм" : "Үгүй"}</Text>
+                  <Text>Утасны дугаар: {detail.buyerPhoneNumber}</Text>
+                  <Text>Төлбөрийн хэлбэр: {detail.paymenthMethod}</Text>
                 </View>
               </View>
             ))

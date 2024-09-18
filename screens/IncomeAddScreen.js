@@ -21,8 +21,9 @@ import { useRoute } from "@react-navigation/native";
 
 const IncomeAddScreen = () => {
   const route = useRoute();
-  const { saleID } = route.params; // Get saleID from route params
-  console.log(saleID);
+  const salesReport = route.params?.salesReport || {}; // Ensure salesReport exists
+  const saleID = salesReport?.id; // Extract saleID
+
   const [shoeCode, setShoeCode] = useState("");
   const [shoeData, setShoeData] = useState(null); // Гутлын мэдээллийг хадгалах
   const [price, setPrice] = useState("");
@@ -30,7 +31,7 @@ const IncomeAddScreen = () => {
   const [buyerPhone, setBuyerPhone] = useState("");
   const [totalPrice, setTotalPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
-
+  console.log(route);
   const db = getFirestore();
 
   const handleSearch = async () => {
@@ -58,6 +59,11 @@ const IncomeAddScreen = () => {
       return;
     }
 
+    if (!saleID) {
+      alert("Тайлангийн ID олдсонгүй. Орлогыг бүртгэх боломжгүй.");
+      return;
+    }
+
     try {
       const shoeRef = doc(db, "shoes", shoeCode);
 
@@ -74,12 +80,12 @@ const IncomeAddScreen = () => {
       const salesDetailRef = collection(db, "salesDetail");
 
       // salesReport-ийн харгалзах document ID буюу saleID-г олно
-      const saleID =
-        "sales_" + new Date().toISOString().split("T")[0] + "_branch1"; // Та үүнийг өөрийн branch мэдээллээр өөрчилж болно
+
+      // Та үүнийг өөрийн branch мэдээллээр өөрчилж болно
 
       await addDoc(salesDetailRef, {
-        saleID: saleID, // salesReport-тай холбох
-        shoeCode: shoeCode, // Гутлын кодыг хадгалах
+        saleID, // Use the extracted saleID
+        shoeCode: shoeCode, // The shoe code being sold
       });
 
       alert("Орлого амжилттай нэмэгдлээ.");
