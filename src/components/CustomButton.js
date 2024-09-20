@@ -1,7 +1,7 @@
 import React from "react";
 import { Button as PaperButton } from "react-native-paper";
 import { StyleSheet } from "react-native";
-import { theme } from "../core/theme"; // Import your theme
+import { theme } from "../../core/theme"; // Import your theme
 
 export default function CustomButton({ mode, style, ...props }) {
   // Determine the color based on the mode and theme

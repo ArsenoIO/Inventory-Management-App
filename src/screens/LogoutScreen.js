@@ -11,7 +11,7 @@ const LogoutScreen = () => {
     signOut(auth)
       .then(() => {
         Alert.alert("Амжилттай", "Та системээс гарлаа.");
-        navigation.navigate("Main"); // Системээс гарсны дараа Main дэлгэц рүү шилжүүлнэ
+        // navigation.navigate() байхгүй, апп өөрөө буцна
       })
       .catch((error) => {
         console.error("Системээс гарахад алдаа гарлаа: ", error);

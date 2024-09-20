@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { StyleSheet, Image, Alert, View, Text } from "react-native";
-import { auth } from "../firebaseConfig";
+import { auth } from "../../firebaseConfig";
 import { useNavigation } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import TextInput from "../components/TextInput";
@@ -23,8 +23,6 @@ export default function SignInScreen() {
 
       // Хэрэглэгчийн статусыг хадгалах
       await storeUser(user);
-      // Амжилттай нэвтэрсэн бол Main дэлгэц рүү шилжих
-      navigation.navigate("Main");
     } catch (error) {
       console.log(error);
       Alert.alert("Sign in failed: " + error.message);

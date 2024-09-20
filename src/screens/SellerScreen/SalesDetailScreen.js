@@ -1,5 +1,3 @@
-// screens/SalesDetailScreen.js
-
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -44,11 +42,12 @@ const SalesDetailScreen = ({ route, navigation }) => {
       salesDetailList.map(async (detail) => {
         const shoeDoc = await getDoc(doc(db, "shoes", detail.shoeCode)); // getDoc ашиглаж байна
         const shoeData = shoeDoc.exists() ? shoeDoc.data() : {}; // shoeCode-г ашиглан мэдээллийг авна
+
         return { ...detail, ...shoeData };
       })
     );
 
-    setSalesDetails(shoeDetails);
+    setSalesDetails(shoeDetails); // Орлогын нийт нийлбэрийг хадгалах
     setLoading(false);
   };
 
@@ -57,8 +56,11 @@ const SalesDetailScreen = ({ route, navigation }) => {
   }, []);
 
   const handleAddIncome = () => {
-    // Орлого нэмэх дэлгэц рүү шилжих
-    navigation.navigate("IncomeAddScreen", { salesReport });
+    // Орлого нэмэх дэлгэц рүү шилжих үед одоогийн тайлангийн мэдээллийг дамжуулна
+    navigation.navigate("IncomeAddScreen", {
+      salesReport,
+      onIncomeAdded: fetchSalesDetails, // Орлого нэмсний дараа мэдээллийг шинэчлэх функц
+    });
   };
 
   return (
@@ -67,10 +69,12 @@ const SalesDetailScreen = ({ route, navigation }) => {
         <View style={styles.reportSection}>
           <Text style={styles.reportTitle}>Тайлангийн мэдээлэл</Text>
           <Text>Салбар: {salesReport.branch}</Text>
-          <Text>Орлого: {salesReport.income}</Text>
+          <Text>Орлого: {salesReport.totalIncome}₮</Text>
+
           <Text>Нийт зарсан гутал: {salesReport.totalSales}</Text>
-          <Text>Зардал: {salesReport.expenses}</Text>
-          <Text>Нийт орлого: {salesReport.totalIncome}</Text>
+          <Text>Зардал: {salesReport.expenses}₮</Text>
+          <Text>Нийт орлого: {salesReport.totalIncome}₮</Text>
+
           <Text>Тайлбар: {salesReport.comment}</Text>
           <Text>Үүсгэсэн: {salesReport.createdBy}</Text>
           <Text>
@@ -79,7 +83,7 @@ const SalesDetailScreen = ({ route, navigation }) => {
         </View>
 
         <View style={styles.detailSection}>
-          <Text style={styles.detailTitle}>Гутлуудын дэлгэрэнгүй</Text>
+          <Text style={styles.detailTitle}>Орлогын дэлгэрэнгүй</Text>
           {loading ? (
             <Text>Ачааллаж байна...</Text>
           ) : (
@@ -90,11 +94,13 @@ const SalesDetailScreen = ({ route, navigation }) => {
                   style={styles.shoeImage}
                 />
                 <View style={styles.shoeInfo}>
-                  <Text>Гутлын код: {detail.shoeCode}</Text>
-                  <Text>Гутлын нэр: {detail.shoeName || "Хоосон"}</Text>
-                  <Text>Үнийн дүн: {detail.shoePrice}₮</Text>
+                  <Text>
+                    Код: {detail.shoeCode} | {detail.shoeName || "Хоосон"}
+                  </Text>
+                  <Text>Үндсэн үнэ: {detail.shoePrice}₮</Text>
+                  <Text>Зарсан үнэ: {detail.soldPrice}₮</Text>
+
                   <Text>Размер: {detail.shoeSize}</Text>
-                  <Text>Зарагдсан эсэх: {detail.isSold ? "Тийм" : "Үгүй"}</Text>
                   <Text>Утасны дугаар: {detail.buyerPhoneNumber}</Text>
                   <Text>Төлбөрийн хэлбэр: {detail.paymenthMethod}</Text>
                 </View>
@@ -104,7 +110,6 @@ const SalesDetailScreen = ({ route, navigation }) => {
         </View>
       </ScrollView>
 
-      {/* Нэмэх товч нь absolute байрлалтай */}
       <TouchableOpacity style={styles.addButton} onPress={handleAddIncome}>
         <AntDesign name="plus" size={30} color="#FFF" />
       </TouchableOpacity>

@@ -14,12 +14,18 @@ import {
   doc,
   getDoc,
   updateDoc,
+  Timestamp,
   collection,
   addDoc,
 } from "firebase/firestore";
+import { getDocs, query, where } from "firebase/firestore";
+import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
+import useUserData from "../../hooks/useUserData";
 
 const IncomeAddScreen = () => {
+  const { userData, loading: userLoading, error } = useUserData(); // Custom hook ашиглаж байна
+  const navigation = useNavigation();
   const route = useRoute();
   const salesReport = route.params?.salesReport || {}; // Ensure salesReport exists
   const saleID = salesReport?.id; // Extract saleID
@@ -31,8 +37,13 @@ const IncomeAddScreen = () => {
   const [buyerPhone, setBuyerPhone] = useState("");
   const [totalPrice, setTotalPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
-  console.log(route);
   const db = getFirestore();
+
+  // Хувь лизингийн нэмэлт талбарууд
+  const [advancePayment, setAdvancePayment] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountOwner, setAccountOwner] = useState("");
+  const [leasingNote, setLeasingNote] = useState("");
 
   const handleSearch = async () => {
     if (!shoeCode) return;
@@ -64,6 +75,27 @@ const IncomeAddScreen = () => {
       return;
     }
 
+    // Салбарын branchName-ийг шүүж олж, totalShoe утгыг нэмэгдүүлэх
+    const db = getFirestore();
+    const branchesCollection = collection(db, "branches");
+    const branchQuery = query(
+      branchesCollection,
+      where("branchName", "==", userData.branch)
+    );
+
+    const querySnapshot = await getDocs(branchQuery);
+    if (!querySnapshot.empty) {
+      const branchDoc = querySnapshot.docs[0]; // Эхний тохирсон баримтыг авна
+      const currentTotalShoe = branchDoc.data().totalShoe || 0;
+
+      // totalShoe-г 1-ээр нэмэгдүүлнэ
+      await updateDoc(branchDoc.ref, {
+        totalShoe: currentTotalShoe - 1,
+      });
+    } else {
+      console.error("Салбар олдсонгүй");
+    }
+
     try {
       const shoeRef = doc(db, "shoes", shoeCode);
 
@@ -76,17 +108,45 @@ const IncomeAddScreen = () => {
         transactionMethod: paymentMethod,
       });
 
+      if (paymentMethod === "Leasing") {
+        const leasingData = {
+          leasingDate: Timestamp.now(),
+          shoeCode: shoeCode,
+          advancePayment: advancePayment,
+          buyerPhoneNumber: buyerPhone,
+          accountNumber: accountNumber,
+          accountOwner: accountOwner,
+          leasingNote: leasingNote,
+        };
+
+        await addDoc(collection(db, "leasing"), leasingData);
+      }
+
       // salesDetail коллекцид мэдээлэл нэмэх
       const salesDetailRef = collection(db, "salesDetail");
 
-      // salesReport-ийн харгалзах document ID буюу saleID-г олно
-
-      // Та үүнийг өөрийн branch мэдээллээр өөрчилж болно
-
+      // salesReport-ийн харгалзах document ID буюу saleID-г ашиглаж байгаа
       await addDoc(salesDetailRef, {
-        saleID, // Use the extracted saleID
-        shoeCode: shoeCode, // The shoe code being sold
+        saleID, // Тайлангийн ID
+        shoeCode: shoeCode, // Зарсан гутлын код
+        soldPrice: totalPrice, // Зарсан үнэ
       });
+
+      // Тайлангийн орлого болон зарсан гутлын тоог шинэчлэх
+      const reportRef = doc(db, "salesReport", saleID);
+      const reportDoc = await getDoc(reportRef);
+      if (reportDoc.exists()) {
+        const currentReport = reportDoc.data();
+        const updatedTotalSales = currentReport.totalSales + 1; // Нийт зарсан гутал +1
+        const updatedTotalIncome =
+          currentReport.totalIncome + parseFloat(totalPrice); // Орлогыг нэмэх
+
+        // Тайлангийн нийт утгуудыг шинэчлэх
+        await updateDoc(reportRef, {
+          totalSales: updatedTotalSales,
+          totalIncome: updatedTotalIncome,
+        });
+      }
 
       alert("Орлого амжилттай нэмэгдлээ.");
 
@@ -98,6 +158,14 @@ const IncomeAddScreen = () => {
       setBuyerPhone("");
       setTotalPrice("");
       setPaymentMethod("");
+
+      setAdvancePayment("");
+      setAccountNumber("");
+      setAccountOwner("");
+      setLeasingNote("");
+      // Тайлангийн дэлгэрэнгүйг шинэчлэх функц дуудах боломжтой
+
+      navigation.goBack();
     } catch (error) {
       console.error("Орлого нэмэхэд алдаа гарлаа:", error);
       alert("Орлого нэмэхэд алдаа гарлаа.");
@@ -204,16 +272,47 @@ const IncomeAddScreen = () => {
           <Text>LendPay</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => setPaymentMethod("Credit")}
+          onPress={() => setPaymentMethod("Leasing")}
           style={[
             styles.paymentButton,
-            paymentMethod === "Credit" && styles.selectedPayment,
+            paymentMethod === "Leasing" && styles.selectedPayment,
           ]}
         >
-          <Text>Утсаар шилжүүлэх</Text>
+          <Text>Хувь лизинг</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Хувь лизингийн нэмэлт талбаруудыг босоо байрлалтай болгох */}
+      {paymentMethod === "Leasing" && (
+        <View style={styles.leasingContainer}>
+          <TextInput
+            value={advancePayment}
+            onChangeText={setAdvancePayment}
+            style={styles.input}
+            placeholder="Урьдчилгаа төлбөр"
+            keyboardType="numeric"
+          />
+          <TextInput
+            value={accountNumber}
+            onChangeText={setAccountNumber}
+            style={styles.input}
+            placeholder="Дансны дугаар"
+            keyboardType="numeric"
+          />
+          <TextInput
+            value={accountOwner}
+            onChangeText={setAccountOwner}
+            style={styles.input}
+            placeholder="Данс эзэмшигчийн нэр"
+          />
+          <TextInput
+            value={leasingNote}
+            onChangeText={setLeasingNote}
+            style={styles.input}
+            placeholder="Тэмдэглэл"
+          />
+        </View>
+      )}
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.cancelButton}>
           <Text style={styles.buttonText}>Цуцлах</Text>
@@ -332,6 +431,9 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#FFF",
     fontWeight: "bold",
+  },
+  leasingContainer: {
+    marginVertical: 10, // Талбаруудын хооронд зай нэмэх
   },
 });
 

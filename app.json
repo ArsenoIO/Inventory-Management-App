@@ -1,13 +1,20 @@
 {
   "expo": {
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+,
+      "url": "https://u.expo.dev/21bf6dd1-1b63-49a9-a382-1d80db771f85"
+    },
     "name": "Орос Цаатан",
     "slug": "InventoryManagementApp",
-    "version": "3.0.4",
+    "version": "3.1.1",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./src/assets/logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/logo.png",
+      "image": "./src/assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,7 +24,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
+        "foregroundImage": "./src/assets/logo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.dorjoo1110.InventoryManagementApp"
@@ -32,11 +39,6 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/21bf6dd1-1b63-49a9-a382-1d80db771f85",
-      "enabled": true,
-      "checkAutomatically": "ON_LOAD"
     }
   }
 }

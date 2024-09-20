@@ -10,7 +10,7 @@ import {
   getDoc,
   Timestamp,
 } from "firebase/firestore";
-import { firestore } from "../firebaseConfig"; // Firebase тохиргоотойгоо холбоно
+import { firestore } from "../../firebaseConfig"; // Firebase тохиргоотойгоо холбоно
 
 // Шинэ аялал үүсгэх функц
 export const createNewTrip = async (startDate, initialAmount) => {

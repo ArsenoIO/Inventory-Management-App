@@ -15,12 +15,14 @@ import {
   addDoc,
   Timestamp,
 } from "firebase/firestore"; // addDoc ашиглана
-import SalesReportItem from "../components/SalesReportItem";
+import SalesReportItem from "../../components/SalesReportItem";
 import { useNavigation } from "@react-navigation/native";
 import { AntDesign } from "@expo/vector-icons"; // Нэмэх товчинд зориулсан icon
 import DateTimePicker from "@react-native-community/datetimepicker"; // DateTime picker ашиглана
+import useUserData from "../../hooks/useUserData";
 
 const SalesReportScreen = () => {
+  const { userData, loading: userLoading, error } = useUserData();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false); // Модалын харагдах төлөв
@@ -57,13 +59,15 @@ const SalesReportScreen = () => {
 
     // Шинэ тайлан үүсгэх утгууд (автоматаар үүснэ)
     const newReport = {
-      branch: "ТӨВ САЛБАР", // Салбарын нэрийг автоматаар тохируулж болно
+      branch: userData.branch, // Салбарын нэрийг автоматаар тохируулж болно
       date: Timestamp.fromDate(selectedDate), // Сонгосон огноо
+
       income: 0, // Эхний орлого 0
       totalSales: 0, // Зарагдсан гутлын тоо 0
       expenses: 0, // Зардал 0
+
       totalIncome: 0, // Нийт орлого (income - expenses)
-      createdBy: "Хэрэглэгчийн нэр", // Хэн үүсгэснийг заана
+      createdBy: userData.userName, // Хэн үүсгэснийг заана
       isReviewed: false, // Тайланг хараахан хянаагүй
       comment: "Байхгүй", // Тайлбар
     };
@@ -102,7 +106,7 @@ const SalesReportScreen = () => {
               key={report.id}
               branch={report.branch}
               date={report.date}
-              income={report.income}
+              income={report.totalIncome}
               totalSales={report.totalSales}
               expenses={report.expenses}
               createdBy={report.createdBy}

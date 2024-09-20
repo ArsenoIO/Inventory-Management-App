@@ -8,8 +8,9 @@ import {
   Alert,
   Text,
   Button,
+  db,
 } from "react-native";
-import { firestore, storage } from "../firebaseConfig";
+import { firestore, storage } from "../../../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
   doc,
@@ -17,14 +18,15 @@ import {
   setDoc,
   Timestamp,
   getFirestore,
+  updateDoc,
 } from "firebase/firestore";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
-import CustomButton from "../components/CustomButton";
-import NameSelector from "../components/NameSelector";
+import CustomButton from "../../components/CustomButton";
+import NameSelector from "../../components/NameSelector";
 import { TextInput as PaperTextInput, ProgressBar } from "react-native-paper";
 import ModalSelector from "react-native-modal-selector";
-import useUserData from "../hooks/useUserData"; // Custom Hook ашиглаж байна
+import useUserData from "../../hooks/useUserData"; // Custom Hook ашиглаж байна
 
 const AddShoeScreen = () => {
   const { userData, loading: userLoading, error } = useUserData(); // Custom hook ашиглаж байна
@@ -151,13 +153,37 @@ const AddShoeScreen = () => {
         soldPrice: null,
       };
 
+      // Гутлын мэдээллийг Firestore дээр нэмэх
       await setDoc(doc(firestore, "shoes", shoeCode), shoeData);
 
+      // Салбарын branchName-ийг шүүж олж, totalShoe утгыг нэмэгдүүлэх
+      const db = getFirestore();
+      const branchesCollection = collection(db, "branches");
+      const branchQuery = query(
+        branchesCollection,
+        where("branchName", "==", userData.branch)
+      );
+
+      const querySnapshot = await getDocs(branchQuery);
+      if (!querySnapshot.empty) {
+        const branchDoc = querySnapshot.docs[0]; // Эхний тохирсон баримтыг авна
+        const currentTotalShoe = branchDoc.data().totalShoe || 0;
+
+        // totalShoe-г 1-ээр нэмэгдүүлнэ
+        await updateDoc(branchDoc.ref, {
+          totalShoe: currentTotalShoe + 1,
+        });
+      } else {
+        console.error("Салбар олдсонгүй");
+      }
+
+      // Бүртгэлийн дараах талбаруудыг цэвэрлэх
       setShoeName("");
       setShoeCode("");
       setSize("");
       setPrice("");
       setSelectedImage(null);
+      Alert.alert("Гутал амжилттай бүртгэгдлээ.");
     } catch (error) {
       Alert.alert("Гутал нэмэхэд алдаа гарлаа: ", error.message);
       console.log(error.message);

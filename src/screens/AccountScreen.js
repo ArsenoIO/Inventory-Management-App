@@ -8,14 +8,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Avatar } from "react-native-elements";
-import { useNavigation } from "@react-navigation/native";
 import { getAuth, signOut } from "firebase/auth";
 import { removeUser } from "../services/authService";
 import useUserData from "../hooks/useUserData"; // Custom Hook ашиглаж байна
 
 const AccountScreen = () => {
   const { userData, loading, error } = useUserData(); // Custom hook ашиглан хэрэглэгчийн өгөгдөл ава
-  const navigation = useNavigation();
+
   const auth = getAuth();
 
   const handleLogout = async () => {

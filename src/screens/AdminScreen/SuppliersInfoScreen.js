@@ -3,8 +3,8 @@ import { ScrollView, View, StyleSheet, Alert } from "react-native";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
 
-import ProfileButton from "../components/ProfileButton";
-import useUserData from "../hooks/useUserData";
+import ProfileButton from "../../components/ProfileButton";
+import useUserData from "../../hooks/useUserData";
 
 const SuppliersInfoScreen = () => {
   const [suppliers, setSuppliers] = useState([]);

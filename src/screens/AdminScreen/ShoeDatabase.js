@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   TextInput,
-  ScrollView,
   StyleSheet,
-  Button,
   TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  FlatList,
 } from "react-native";
 import {
   getFirestore,
@@ -18,18 +19,18 @@ import {
   where,
 } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons"; // Import icon library
-import ShoeButton from "../components/ShoeButton";
+import ShoeButton from "../../components/ShoeButton";
 import { useNavigation } from "@react-navigation/native"; // Import useNavigation
 
-const ITEMS_PER_PAGE = 20; // Number of shoes to load per page
+const ITEMS_PER_PAGE = 10; // Number of shoes to load per page
 
 const ShoeInventoryScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [shoes, setShoes] = useState([]);
-  const [filteredShoes, setFilteredShoes] = useState([]); // Filtered shoes based on search query
   const [lastVisible, setLastVisible] = useState(null); // Store the last visible document
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Тэмдэглэх нь ачаалж байгаа эсэхийг харуулна
   const [hasMore, setHasMore] = useState(true); // To check if more data is available
+  const [searching, setSearching] = useState(false); // Хайлт хийж байгаа төлөв
 
   const db = getFirestore();
   const navigation = useNavigation(); // Access navigation
@@ -40,28 +41,26 @@ const ShoeInventoryScreen = () => {
 
   const fetchShoes = async (reset = false, search = false) => {
     setLoading(true);
+    setSearching(search); // Хайлт хийж байгааг тэмдэглэх
+
     try {
       const shoesCollection = collection(db, "shoes");
-      let shoesQuery = query(
-        shoesCollection,
-        orderBy("shoeName"),
-        limit(ITEMS_PER_PAGE)
-      );
+      let shoesQuery;
 
       if (search && searchQuery) {
-        // If searching, filter shoes by name
+        // Хэрэв хайлтаар бол shoeCode-оор шүүх
         shoesQuery = query(
           shoesCollection,
-          where("shoeName", ">=", searchQuery),
-          where("shoeName", "<=", searchQuery + "\uf8ff"),
+          where("shoeCode", ">=", searchQuery),
+          where("shoeCode", "<=", searchQuery + "\uf8ff"),
           limit(ITEMS_PER_PAGE)
         );
-      } else if (lastVisible && !reset) {
+      } else {
+        // Эхний бүх гутлуудыг татах (эсвэл load more үед)
         shoesQuery = query(
           shoesCollection,
-          orderBy("shoeName"),
-          startAfter(lastVisible),
-          limit(ITEMS_PER_PAGE)
+          orderBy("shoeCode"), // shoeCode-г ашиглаж эрэмбэлэх
+          lastVisible ? startAfter(lastVisible) : limit(ITEMS_PER_PAGE)
         );
       }
 
@@ -73,7 +72,6 @@ const ShoeInventoryScreen = () => {
         price: doc.data().shoePrice,
         size: doc.data().shoeSize,
         imageUrl: doc.data().ImageUrl,
-        // Add other fields to pass to ShoeDetailScreen
         addedBranch: doc.data().addedBranch,
         addedUserID: doc.data().addedUserID,
         isSold: doc.data().isSold,
@@ -86,10 +84,8 @@ const ShoeInventoryScreen = () => {
 
       if (reset || search) {
         setShoes(shoeList);
-        setFilteredShoes(shoeList); // Set both shoes and filteredShoes when resetting or searching
       } else {
         setShoes((prevShoes) => [...prevShoes, ...shoeList]);
-        setFilteredShoes((prevShoes) => [...prevShoes, ...shoeList]); // Update filteredShoes too
       }
 
       const lastVisibleDoc = shoeSnapshot.docs[shoeSnapshot.docs.length - 1];
@@ -98,10 +94,12 @@ const ShoeInventoryScreen = () => {
       if (shoeList.length < ITEMS_PER_PAGE) {
         setHasMore(false);
       }
+
+      setSearching(false); // Хайлт дууссан үед төлвийг false болгоно
     } catch (error) {
       console.error("Error fetching shoes: ", error);
     } finally {
-      setLoading(false);
+      setLoading(false); // Ачаалалт дууссан
     }
   };
 
@@ -111,20 +109,43 @@ const ShoeInventoryScreen = () => {
   };
 
   const handleNextPage = () => {
-    if (hasMore) fetchShoes();
+    if (hasMore && !loading) {
+      fetchShoes();
+    }
   };
 
   const handleShoePress = (shoe) => {
     // Pass the shoe object to the ShoeDetailScreen
-    navigation.navigate("ShoeDetailScreen", { shoe });
+    navigation.navigate("AdminShoeDetailScreen", { shoe });
   };
+
+  const renderShoe = ({ item }) => (
+    <View style={styles.shoeWrapper}>
+      <ShoeButton
+        imageUrl={item.imageUrl}
+        code={item.code}
+        name={item.name}
+        price={item.price}
+        size={item.size}
+        addedBranch={item.addedBranch}
+        addedUserID={item.addedUserID}
+        soldBranch={item.soldBranch}
+        isSold={item.isSold}
+        buyerPhoneNumber={item.buyerPhoneNumber}
+        soldDate={item.soldDate}
+        soldPrice={item.soldPrice}
+        transactionMethod={item.transactionMethod}
+        onPress={() => handleShoePress(item)} // Handle press and navigate
+      />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.searchBarContainer}>
         <TextInput
           style={styles.searchBar}
-          placeholder="Барааны нэрээр хайх"
+          placeholder="Гутлын кодоор хайх"
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -132,37 +153,35 @@ const ShoeInventoryScreen = () => {
           <Ionicons name="search" size={24} color="black" />
         </TouchableOpacity>
       </View>
-      <ScrollView contentContainerStyle={styles.shoeContainer}>
-        {filteredShoes.map((shoe) => (
-          <View key={shoe.id} style={styles.shoeWrapper}>
-            <ShoeButton
-              imageUrl={shoe.imageUrl}
-              code={shoe.code}
-              name={shoe.name}
-              price={shoe.price}
-              size={shoe.size}
-              addedBranch={shoe.addedBranch}
-              addedUserID={shoe.addedUserID}
-              soldBranch={shoe.soldBranch}
-              isSold={shoe.isSold}
-              buyerPhoneNumber={shoe.buyerPhoneNumber}
-              soldDate={shoe.soldDate}
-              soldPrice={shoe.soldPrice}
-              transactionMethod={shoe.transactionMethod}
-              onPress={() => handleShoePress(shoe)} // Handle press and navigate
-            />
-          </View>
-        ))}
-      </ScrollView>
-      {hasMore && (
-        <View style={styles.paginationContainer}>
-          <Button
-            title="Илүү ихийг ачаалах"
-            onPress={handleNextPage}
-            disabled={loading}
-          />
+
+      {/* Хайлт хийж байгаа үед ачаалж байгааг харуулах */}
+      {loading && !shoes.length && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text>Ачааллаж байна...</Text>
         </View>
       )}
+
+      {/* Илэрц олдоогүй үед харуулах мессеж */}
+      {!loading && !shoes.length && searching && (
+        <View style={styles.noResultsContainer}>
+          <Text>Илэрц олдсонгүй</Text>
+        </View>
+      )}
+
+      <FlatList
+        data={shoes}
+        renderItem={renderShoe}
+        keyExtractor={(item) => item.id}
+        numColumns={2} // Two items per row
+        onEndReached={handleNextPage} // Infinite scroll logic
+        onEndReachedThreshold={0.5} // Trigger when 50% of the list is reached
+        ListFooterComponent={
+          hasMore && !loading ? (
+            <ActivityIndicator size="small" color="#0000ff" />
+          ) : null
+        }
+      />
     </View>
   );
 };
@@ -190,17 +209,17 @@ const styles = StyleSheet.create({
   searchIcon: {
     paddingHorizontal: 10,
   },
-  shoeContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-around",
-  },
   shoeWrapper: {
     width: "45%", // Two items per row
+    margin: 10,
   },
-  paginationContainer: {
-    marginVertical: 20,
+  loadingContainer: {
     alignItems: "center",
+    marginBottom: 20,
+  },
+  noResultsContainer: {
+    alignItems: "center",
+    marginTop: 20,
   },
 });
 

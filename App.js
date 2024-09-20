@@ -1,13 +1,15 @@
-import React, { useContext, useEffect } from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { AuthContext, AuthProvider } from "./services/AuthProvider";
-import SignInScreen from "./screens/SignInScreen";
-import DrawerNavigator from "./navigators/DrawerNavigator"; // Үндсэн апп-ын навигаци
+import React, { useContext, useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, Alert } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import { AuthContext, AuthProvider } from "./src/services/AuthProvider";
+import SignInScreen from "./src/screens/SignInScreen";
+import DrawerNavigator from "./src/navigation/DrawerNavigator";
 import * as Updates from "expo-updates"; // OTA update-ийг ашиглах
 import { AppState } from "react-native"; // App state хянахад ашиглана
 
 const App = () => {
+  const [isCheckingForUpdate, setIsCheckingForUpdate] = useState(true); // Шинэчлэл шалгаж байгаа төлөв
+
   useEffect(() => {
     const checkForUpdates = async () => {
       try {
@@ -23,6 +25,7 @@ const App = () => {
               {
                 text: "Үгүй",
                 style: "cancel",
+                onPress: () => setIsCheckingForUpdate(false), // Хэрэглэгч шинэчлэхгүй гэж сонговол
               },
               {
                 text: "Тийм",
@@ -30,9 +33,12 @@ const App = () => {
               },
             ]
           );
+        } else {
+          setIsCheckingForUpdate(false); // Шинэчлэл байхгүй үед апп руу орно
         }
       } catch (error) {
         console.error("Шинэчлэл шалгахад алдаа гарлаа:", error);
+        setIsCheckingForUpdate(false);
       }
     };
 
@@ -54,6 +60,16 @@ const App = () => {
     };
   }, []);
 
+  // Шинэчлэлт шалгаж байхад үзүүлэх дэлгэц
+  if (isCheckingForUpdate) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>Шинэчлэл шалгаж байна...</Text>
+      </View>
+    );
+  }
+
   return (
     <AuthProvider>
       <NavigationContainer>
@@ -64,9 +80,17 @@ const App = () => {
 };
 
 const RootNavigator = () => {
-  const { user } = useContext(AuthContext); // Хэрэглэгчийн төлөвийг контекстээс авах
+  const { user, loading } = useContext(AuthContext);
 
-  return user ? <DrawerNavigator /> : <SignInScreen />; // Нэвтэрсэн эсвэл нэвтрээгүй эсэхээр дэлгэцийг харуулах
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  return user ? <DrawerNavigator /> : <SignInScreen />;
 };
 
 export default App;

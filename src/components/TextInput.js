@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { TextInput as Input } from "react-native-paper";
-import { theme } from "../core/theme";
+import { theme } from "../../core/theme";
 
 export default function TextInput(props) {
   return (

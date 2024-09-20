@@ -1,7 +1,5 @@
-// components/SalesReportItem.js
-
 import React from "react";
-import { View, Text, StyleSheet, Button } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 const SalesReportItem = ({
   branch,
@@ -28,8 +26,20 @@ const SalesReportItem = ({
           Бусад зардал: <Text style={styles.expensesValue}>{expenses}₮</Text>
         </Text>
       </View>
-      <Text style={styles.createdBy}>Илгээсэн: {createdBy}</Text>
-      <Button title="Дэлгэрэнгүй" color="#03A9F4" onPress={onDetailPress} />
+
+      {/* Үүсгэсэн болон Дэлгэрэнгүй товчийг нэг мөрөнд байрлуулах */}
+      <View style={styles.footer}>
+        <Text style={styles.createdBy}>Үүсгэсэн: {createdBy}</Text>
+
+        {/* Дэлгэрэнгүй товч */}
+        <TouchableOpacity style={styles.detailButton} onPress={onDetailPress}>
+          <Text style={styles.detailButtonText}>Дэлгэрэнгүй</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View>
+        <Text style={styles.isReviewed}>Төлөв: {isReviewed}</Text>
+      </View>
     </View>
   );
 };
@@ -58,6 +68,7 @@ const styles = StyleSheet.create({
   },
   body: {
     marginBottom: 10,
+    padding: 10,
   },
   income: {
     fontSize: 14,
@@ -77,10 +88,29 @@ const styles = StyleSheet.create({
   expensesValue: {
     color: "red",
   },
+  footer: {
+    flexDirection: "row", // Үүсгэсэн болон товчийг нэг мөрөнд гаргах
+    justifyContent: "space-between", // Товч болон текстийг хоёр талд байрлуулах
+    alignItems: "center",
+    marginTop: 10,
+  },
   createdBy: {
     fontSize: 12,
-    color: "#666",
-    marginBottom: 10,
+    color: "#6A9C89",
+  },
+  detailButton: {
+    backgroundColor: "#F56C6C", // Улаан өнгө
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  detailButtonText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  isReviewed: {
+    alignSelf: "center",
   },
 });
 
