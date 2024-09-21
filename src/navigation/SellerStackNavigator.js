@@ -17,6 +17,8 @@ import CentralBranchScreen from "../screens/BranchDetailScreen/CentralBranchScre
 import BumbugurBranchScreen from "../screens/BranchDetailScreen/BumbugurBranchScreen";
 import UvurkhangaiBranchScreen from "../screens/BranchDetailScreen/UvurkhangaiBranchScreen";
 
+import BvrtgelScreen from "../screens/SellerScreen/BvrtgelScreen";
+
 const Stack = createStackNavigator();
 
 const SellerStackNavigator = ({ navigation }) => {
@@ -212,6 +214,23 @@ const SellerStackNavigator = ({ navigation }) => {
         component={BumbugurBranchScreen}
         options={{
           title: "Бөмбөгөр салбар",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="BvrtgelScreen"
+        component={BvrtgelScreen}
+        options={{
+          title: "Өнөөдөр",
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
               <FontAwesome

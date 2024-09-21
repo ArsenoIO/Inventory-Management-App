@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Button } from "react-native";
 import Icon from "react-native-vector-icons/Entypo";
 import BranchButton from "../../components/BranchButton";
 import { Divider } from "react-native-paper";
@@ -97,6 +97,10 @@ const HomeScreen = () => {
         </View>
       </View>
       <Divider style={styles.divider} />
+      <Button
+        title="Өнөөдрийн гутал бүртгэл"
+        onPress={() => navigation.navigate("BvrtgelScreen")}
+      />
     </ScrollView>
   );
 };

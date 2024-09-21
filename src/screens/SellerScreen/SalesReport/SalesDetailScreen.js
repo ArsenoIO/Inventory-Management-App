@@ -102,7 +102,7 @@ const SalesDetailScreen = ({ route, navigation }) => {
 
                   <Text>Размер: {detail.shoeSize}</Text>
                   <Text>Утасны дугаар: {detail.buyerPhoneNumber}</Text>
-                  <Text>Төлбөрийн хэлбэр: {detail.paymenthMethod}</Text>
+                  <Text>Төлбөрийн хэлбэр: {detail.transactionMethod}</Text>
                 </View>
               </View>
             ))
