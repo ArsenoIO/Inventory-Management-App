@@ -7,9 +7,9 @@ import HomeScreen from "../screens/SellerScreen/HomeScreen";
 import AddShoeScreen from "../screens/SellerScreen/AddShoeScreen";
 import ShoeDatabase from "../screens/SellerScreen/ShoeDatabase";
 import ShoeDetailScreen from "../screens/SellerScreen/ShoeDetailScreen";
-import SalesReportScreen from "../screens/SellerScreen/SalesReportScreen";
-import SalesDetailScreen from "../screens/SellerScreen/SalesDetailScreen";
-import IncomeAddScreen from "../screens/SellerScreen/IncomeAddScreen";
+import SalesReportScreen from "../screens/SellerScreen/SalesReport/SalesReportScreen";
+import SalesDetailScreen from "../screens/SellerScreen/SalesReport/SalesDetailScreen";
+import IncomeAddScreen from "../screens/SellerScreen/SalesReport/IncomeAddScreen";
 import ChangeBranchScreen from "../screens/SellerScreen/ChangeBranchScreen";
 import LeasingScreen from "../screens/SellerScreen/Leasing";
 
@@ -75,7 +75,7 @@ const SellerStackNavigator = ({ navigation }) => {
         name="SalesReportScreen"
         component={SalesReportScreen}
         options={{
-          title: "Тайлан илгээх",
+          title: "Тайлан",
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
               <FontAwesome
@@ -92,7 +92,24 @@ const SellerStackNavigator = ({ navigation }) => {
         name="ShoeDatabase"
         component={ShoeDatabase}
         options={{
-          title: "Тайлан илгээх",
+          title: "Бүртгэлтэй гутлын жагсаалт",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="ShoeDetailScreen"
+        component={ShoeDetailScreen}
+        options={{
+          title: "Гутлын мэдээлэл",
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
               <FontAwesome
@@ -126,7 +143,7 @@ const SellerStackNavigator = ({ navigation }) => {
         name="Leasing"
         component={LeasingScreen}
         options={{
-          title: "Салбар шилжүүлэх",
+          title: "Хувь лизинг",
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
               <FontAwesome

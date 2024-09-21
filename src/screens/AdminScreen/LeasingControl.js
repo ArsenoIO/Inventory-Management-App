@@ -6,27 +6,25 @@ import {
   Text,
   Dimensions,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { DataTable } from "react-native-paper";
 import {
   getFirestore,
   collection,
   getDocs,
+  deleteDoc,
   doc,
-  getDoc,
-  addDoc,
 } from "firebase/firestore";
-import ShoeDetailModal from "../../components/ShoeDetailModal";
-import PaymentModal from "../../components/PaymentModal"; // PaymentModal-г импортлож байна
+import PaymentModal from "../../components/Modal/PaymentModal"; // Assuming you have a PaymentModal component
 
 const { width, height } = Dimensions.get("window");
 
 const AdminLeasingScreen = () => {
   const [leasingData, setLeasingData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [paymentModalVisible, setPaymentModalVisible] = useState(false); // Төлөлт оруулах модалын төлөв
-  const [selectedShoeData, setSelectedShoeData] = useState(null); // Modal-д харуулах гутлын мэдээлэл
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [selectedLease, setSelectedLease] = useState(null); // Selected lease for payment
 
   useEffect(() => {
     fetchLeasingData();
@@ -50,33 +48,34 @@ const AdminLeasingScreen = () => {
     }
   };
 
-  // Гутлын мэдээллийг татах функц
-  const fetchShoeDetail = async (shoeCode) => {
-    const db = getFirestore();
-    const shoeDocRef = doc(db, "shoes", shoeCode);
-    const shoeDoc = await getDoc(shoeDocRef);
-
-    if (shoeDoc.exists()) {
-      setSelectedShoeData(shoeDoc.data());
-      setModalVisible(true); // Modal-г харуулна
-    } else {
-      console.error("Гутлын мэдээлэл олдсонгүй");
-    }
+  const handleDeleteLease = async (leaseId) => {
+    Alert.alert(
+      "Устгах уу?",
+      "Энэ лизингийн мэдээллийг устгахдаа итгэлтэй байна уу?",
+      [
+        { text: "Цуцлах", style: "cancel" },
+        {
+          text: "Устгах",
+          onPress: async () => {
+            try {
+              const db = getFirestore();
+              await deleteDoc(doc(db, "leasing", leaseId));
+              setLeasingData(
+                leasingData.filter((lease) => lease.id !== leaseId)
+              );
+              Alert.alert("Амжилттай устлаа", "Лизингийн мэдээлэл устгагдлаа.");
+            } catch (error) {
+              console.error("Error deleting lease: ", error);
+            }
+          },
+        },
+      ]
+    );
   };
 
-  // Төлөлт оруулах функц
-  const handlePaymentSubmit = async (date, amount) => {
-    const db = getFirestore();
-    try {
-      await addDoc(collection(db, "payment"), {
-        paymentDate: date,
-        paymentAmount: amount,
-        paymentDetail: `Төлөлт: ${selectedShoeData?.shoeCode}`, // Төлбөрийн дэлгэрэнгүй
-      });
-      alert("Төлөлт амжилттай нэмэгдлээ.");
-    } catch (error) {
-      console.error("Error adding payment: ", error);
-    }
+  const openPaymentModal = (lease) => {
+    setSelectedLease(lease);
+    setPaymentModalVisible(true);
   };
 
   return (
@@ -104,6 +103,7 @@ const AdminLeasingScreen = () => {
               <DataTable.Title style={styles.column}>
                 Leasing Note
               </DataTable.Title>
+              <DataTable.Title style={styles.column}>Actions</DataTable.Title>
             </DataTable.Header>
 
             {leasingData.map((lease, index) => (
@@ -112,11 +112,7 @@ const AdminLeasingScreen = () => {
                   {index + 1}
                 </DataTable.Cell>
                 <DataTable.Cell style={styles.column}>
-                  <TouchableOpacity
-                    onPress={() => fetchShoeDetail(lease.shoeCode)}
-                  >
-                    <Text style={styles.shoeCodeText}>{lease.shoeCode}</Text>
-                  </TouchableOpacity>
+                  {lease.shoeCode}
                 </DataTable.Cell>
                 <DataTable.Cell style={styles.column}>
                   {lease.advancePayment}
@@ -138,33 +134,26 @@ const AdminLeasingScreen = () => {
                 <DataTable.Cell style={styles.column}>
                   {lease.leasingNote}
                 </DataTable.Cell>
+                <DataTable.Cell style={styles.column}>
+                  <TouchableOpacity onPress={() => openPaymentModal(lease)}>
+                    <Text style={styles.actionText}>Төлөлт</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDeleteLease(lease.id)}>
+                    <Text style={styles.deleteText}>Устгах</Text>
+                  </TouchableOpacity>
+                </DataTable.Cell>
               </DataTable.Row>
             ))}
           </DataTable>
         </ScrollView>
       )}
-
-      {/* ShoeDetailModal component ашиглаж байна */}
-      <ShoeDetailModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        shoeData={selectedShoeData}
-      />
-
-      {/* PaymentModal component */}
-      <PaymentModal
-        visible={paymentModalVisible}
-        onClose={() => setPaymentModalVisible(false)}
-        onSubmit={handlePaymentSubmit}
-      />
-
-      {/* Төлөлт оруулах товч */}
-      <TouchableOpacity
-        style={styles.paymentButton}
-        onPress={() => setPaymentModalVisible(true)}
-      >
-        <Text style={styles.paymentButtonText}>Төлөлт оруулах</Text>
-      </TouchableOpacity>
+      {selectedLease && (
+        <PaymentModal
+          visible={paymentModalVisible}
+          onClose={() => setPaymentModalVisible(false)}
+          lease={selectedLease}
+        />
+      )}
     </View>
   );
 };
@@ -190,28 +179,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minWidth: 30,
   },
-  shoeCodeText: {
-    color: "#007BFF",
-    textDecorationLine: "underline",
-  },
   loadingText: {
     textAlign: "center",
     fontSize: 18,
     marginTop: height * 0.05,
   },
-  paymentButton: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    backgroundColor: "#03A9F4",
-    padding: 15,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
+  actionText: {
+    color: "blue",
+    textDecorationLine: "underline",
   },
-  paymentButtonText: {
-    color: "#FFF",
-    fontWeight: "bold",
+  deleteText: {
+    color: "red",
+    textDecorationLine: "underline",
+    marginTop: 5,
   },
 });
 

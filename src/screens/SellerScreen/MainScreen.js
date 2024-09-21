@@ -26,7 +26,7 @@ const MainScreen = () => {
             iconSource={require("../../assets/shoeRegistration.png")}
           />
           <MainButton
-            title="ОРЛОГЫН ТАЙЛАН ИЛГЭЭХ"
+            title="ОРЛОГЫН ТАЙЛАН"
             onPress={() => navigation.navigate("SalesReportScreen")}
             bgColor="#FF5757"
             iconSource={require("../../assets/reportDaily.png")}

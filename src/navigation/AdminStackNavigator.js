@@ -4,10 +4,10 @@ import { FontAwesome } from "@expo/vector-icons"; // Back товч
 
 import MainScreen from "../screens/AdminScreen/MainScreen";
 import HomeScreen from "../screens/AdminScreen/HomeScreen";
-import SalesReportScreen from "../screens/AdminScreen/SalesReportScreen";
+import SalesReportScreen from "../screens/AdminScreen/SalesReport/SalesReportScreen";
 import ShoeDatabase from "../screens/AdminScreen/ShoeDatabase";
 import ShoeDetailScreen from "../screens/AdminScreen/ShoeDetailScreen";
-import TripScreen from "../screens/AdminScreen/TripScreen";
+import TripScreen from "../screens/AdminScreen/Trip/TripScreen";
 import SuppliersInfoScreen from "../screens/AdminScreen/SuppliersInfoScreen";
 import UserControl from "../screens/AdminScreen/UserControl";
 import LeasingControl from "../screens/AdminScreen/LeasingControl";

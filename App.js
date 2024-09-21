@@ -9,7 +9,7 @@ import { AppState } from "react-native"; // App state хянахад ашигл�
 
 const App = () => {
   const [isCheckingForUpdate, setIsCheckingForUpdate] = useState(true); // Шинэчлэл шалгаж байгаа төлөв
-
+  /*
   useEffect(() => {
     const checkForUpdates = async () => {
       try {
@@ -69,7 +69,7 @@ const App = () => {
       </View>
     );
   }
-
+*/
   return (
     <AuthProvider>
       <NavigationContainer>

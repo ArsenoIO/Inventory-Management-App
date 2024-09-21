@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { updateDoc, getFirestore, doc } from "firebase/firestore";
-import OtherExpenseModal from "../../components/Modal/OtherExpenseModal";
+import OtherExpenseModal from "../../../components/Modal/OtherExpenseModal";
 
 const TripDetailScreen = ({ route }) => {
   const { trip } = route.params; // trip массив байж магадгүй тул доорх байдлаар авна

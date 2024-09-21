@@ -8,10 +8,10 @@ import {
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import TripButton from "../../components/TripButton";
-import NewTripModal from "../../components/Modal/NewTripModal";
+import TripButton from "../../../components/TripButton";
+import NewTripModal from "../../../components/Modal/NewTripModal";
 import { getFirestore, collection, getDocs } from "firebase/firestore"; // Firestore функцууд
-import useUserData from "../../hooks/useUserData"; // Хэрэглэгчийн өгөгдлийг авах custom hook
+import useUserData from "../../../hooks/useUserData"; // Хэрэглэгчийн өгөгдлийг авах custom hook
 
 const TripScreen = () => {
   const [tripId, setTripId] = useState(null);

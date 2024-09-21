@@ -53,7 +53,7 @@ const PaymentMethodSelector = ({ selectedMethod, onSelect }) => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
   },
   option: {
     alignItems: "center",

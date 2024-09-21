@@ -120,7 +120,7 @@ const ShoeInventoryScreen = () => {
 
   const handleShoePress = (shoe) => {
     // Гутлын дэлгэрэнгүй дэлгэц рүү шилжих
-    navigation.navigate("AdminShoeDetailScreen", { shoe });
+    navigation.navigate("ShoeDetailScreen", { shoe });
   };
 
   return (

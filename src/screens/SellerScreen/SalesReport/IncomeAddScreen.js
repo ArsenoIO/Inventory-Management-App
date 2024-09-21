@@ -21,7 +21,7 @@ import {
 import { getDocs, query, where } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
-import useUserData from "../../hooks/useUserData";
+import useUserData from "../../../hooks/useUserData";
 
 const IncomeAddScreen = () => {
   const { userData, loading: userLoading, error } = useUserData(); // Custom hook ашиглаж байна
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   paymentMethods: {
-    flexDirection: "row",
+    flexDirection: "column",
     justifyContent: "space-around",
     marginBottom: 20,
   },

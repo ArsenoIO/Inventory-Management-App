@@ -9,6 +9,8 @@ import {
   Text,
   Button,
   db,
+  TouchableOpacity,
+  Dimensions,
 } from "react-native";
 import { firestore, storage } from "../../../firebaseConfig";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
@@ -27,6 +29,8 @@ import NameSelector from "../../components/NameSelector";
 import { TextInput as PaperTextInput, ProgressBar } from "react-native-paper";
 import ModalSelector from "react-native-modal-selector";
 import useUserData from "../../hooks/useUserData"; // Custom Hook ашиглаж байна
+
+const { width, height } = Dimensions.get("window");
 
 const AddShoeScreen = () => {
   const { userData, loading: userLoading, error } = useUserData(); // Custom hook ашиглаж байна
@@ -194,32 +198,34 @@ const AddShoeScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {selectedImage && (
-        <Image
-          source={{ uri: selectedImage }}
-          style={styles.image}
-          resizeMode="contain"
-        />
-      )}
-      <View style={styles.row}>
-        <CustomButton
-          icon="file"
-          label="Файлаас сонгох"
-          onPress={openImagePicker}
-          mode="elevated"
-          labelColor="black"
-          style={{ width: "50%" }}
-        />
+      <View style={styles.pickContainer}>
+        <View style={styles.imageContainer}>
+          {selectedImage ? (
+            <Image source={{ uri: selectedImage }} style={styles.image} />
+          ) : (
+            <View style={styles.placeholder}>
+              <Text style={styles.placeholderText}>Гутлын зураг</Text>
+            </View>
+          )}
+        </View>
 
-        <CustomButton
-          icon="camera"
-          label="Камер ашиглах"
-          onPress={openCamera}
-          mode="elevated"
-          labelColor="white"
-          style={{ width: "50%" }}
-        />
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[styles.button, styles.chooseFileButton]}
+            onPress={openImagePicker}
+          >
+            <Text style={styles.buttonText}>Файлаас сонгох</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.useCameraButton]}
+            onPress={openCamera}
+          >
+            <Text style={styles.buttonText}>Камер ашиглах</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
       {loading && (
         <ProgressBar indeterminate color="#CE5A67" style={styles.progress} />
       )}
@@ -283,14 +289,13 @@ const AddShoeScreen = () => {
       />
 
       <View style={styles.button}>
-        <CustomButton
-          mode="contained"
-          icon="plus-circle"
+        <TouchableOpacity
+          style={styles.addShoeButton}
           onPress={handleAddShoe}
           disabled={loading}
         >
-          ГУТАЛ БҮРТГЭХ
-        </CustomButton>
+          <Text style={styles.addShoeButtonText}>ГУТАЛ БҮРТГЭХ</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -299,35 +304,82 @@ const AddShoeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 20,
+    padding: width * 0.05,
     backgroundColor: "#F5F5F5",
   },
-  input: {
-    marginVertical: 10,
-    backgroundColor: "transparent",
-    width: "100%", // Make input full width
-    height: 35,
+  pickContainer: {
+    alignItems: "center",
+    marginBottom: height * 0.03,
   },
-  button: {
+  imageContainer: {
+    width: width * 0.7,
+    height: height * 0.4,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderStyle: "dashed",
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    marginVertical: 10,
+    marginBottom: height * 0.02,
+    backgroundColor: "#ffff",
   },
   image: {
     width: "100%",
-    height: 200,
-    marginBottom: 16,
+    height: "100%",
+  },
+  placeholder: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholderText: {
+    color: "#aaa",
+    fontSize: 16,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  button: {
+    flex: 1,
+    paddingVertical: height * 0.015,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 5,
+    marginHorizontal: width * 0.02,
+  },
+  chooseFileButton: {
+    backgroundColor: "#FFB74D",
+  },
+  useCameraButton: {
+    backgroundColor: "#4CAF50",
+  },
+  buttonText: {
+    color: "#FFF",
+    fontWeight: "bold",
   },
   progress: {
-    marginTop: 20,
+    marginVertical: height * 0.02,
+  },
+  input: {
+    marginBottom: height * 0.02,
   },
   errorText: {
-    color: "red",
-    marginBottom: 10,
+    color: "#D32F2F",
+    marginBottom: height * 0.01,
+    fontSize: 14,
   },
-  row: {
-    flexDirection: "row",
+  addShoeButton: {
+    backgroundColor: "#CE5A67",
+    paddingVertical: height * 0.02,
+    width: 150,
+    borderRadius: 5,
     alignItems: "center",
+  },
+  addShoeButtonText: {
+    color: "#FFF",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
 

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
+  Dimensions,
 } from "react-native";
 import {
   getFirestore,
@@ -14,12 +15,16 @@ import {
   getDocs,
   addDoc,
   Timestamp,
+  query,
+  where,
 } from "firebase/firestore"; // addDoc ашиглана
-import SalesReportItem from "../../components/SalesReportItem";
+import SalesReportItem from "../../../components/SalesReportItem";
 import { useNavigation } from "@react-navigation/native";
 import { AntDesign } from "@expo/vector-icons"; // Нэмэх товчинд зориулсан icon
 import DateTimePicker from "@react-native-community/datetimepicker"; // DateTime picker ашиглана
-import useUserData from "../../hooks/useUserData";
+import useUserData from "../../../hooks/useUserData";
+
+const { width, height } = Dimensions.get("window");
 
 const SalesReportScreen = () => {
   const { userData, loading: userLoading, error } = useUserData();
@@ -30,25 +35,46 @@ const SalesReportScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false); // Өдөр сонгох товчийг харагдуулах төлөв
   const navigation = useNavigation();
 
-  const fetchReports = async () => {
+  useEffect(() => {
+    if (userData && userData.branch) {
+      fetchReports(userData.branch); // Fetch reports once user data is available
+    }
+  }, [userData]);
+
+  const fetchReports = async (userBranch) => {
     setLoading(true);
     const db = getFirestore();
-    const salesReportCollection = collection(db, "salesReport");
-    const salesReportSnapshot = await getDocs(salesReportCollection);
 
-    const salesReportList = salesReportSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      date: doc.data().date.toDate().toLocaleDateString(),
-    }));
+    try {
+      // Query the salesReport collection for reports from the user's registered branch
+      const salesReportCollection = collection(db, "salesReport");
+      const salesReportQuery = query(
+        salesReportCollection,
+        where("branch", "==", userBranch)
+      ); // Filter by branch
+      const salesReportSnapshot = await getDocs(salesReportQuery);
 
-    setReports(salesReportList);
-    setLoading(false);
+      const salesReportList = salesReportSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        date: doc.data().date.toDate().toLocaleDateString(),
+      }));
+
+      setReports(salesReportList);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-    fetchReports();
-  }, []);
+  if (userLoading) {
+    return <Text>Loading user data...</Text>; // Display loading while user data is being fetched
+  }
+
+  if (error) {
+    return <Text>Error: {error}</Text>; // Handle any errors from the useUserData hook
+  }
 
   const handleDetailPress = (salesReport) => {
     navigation.navigate("SalesDetailScreen", { salesReport });
@@ -183,16 +209,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
   },
   scrollContainer: {
-    padding: 16,
+    padding: width * 0.04, // Padding relative to screen width
   },
   addButton: {
     position: "absolute",
-    right: 20,
-    bottom: 20,
+    right: width * 0.05, // 5% from the right
+    bottom: height * 0.03, // 3% from the bottom
     backgroundColor: "#03A9F4",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: width * 0.15, // Button width relative to screen size
+    height: width * 0.15, // Keeping the button circular, height = width
+    borderRadius: (width * 0.15) / 2, // Circular button
     justifyContent: "center",
     alignItems: "center",
     elevation: 8, // Shadow for Android
@@ -209,48 +235,49 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "#FFF",
-    padding: 20,
-    borderRadius: 10,
+    padding: width * 0.05, // Modal padding relative to screen size
+    borderRadius: width * 0.025, // Border radius relative to screen size
     width: "80%",
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: width * 0.045, // Font size relative to screen size
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: height * 0.02, // Margin relative to screen height
     textAlign: "center",
   },
   modalButtonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    marginTop: height * 0.02, // Margin relative to screen height
   },
   cancelButton: {
     flex: 1,
     backgroundColor: "#FF6969",
-    padding: 15,
-    borderRadius: 5,
-    marginRight: 10,
+    padding: height * 0.02, // Padding relative to screen height
+    borderRadius: width * 0.025, // Border radius relative to screen size
+    marginRight: width * 0.025, // Margin relative to screen size
     alignItems: "center",
   },
   submitButton: {
     flex: 1,
     backgroundColor: "#4CAF50",
-    padding: 15,
-    borderRadius: 5,
+    padding: height * 0.02, // Padding relative to screen height
+    borderRadius: width * 0.025, // Border radius relative to screen size
     alignItems: "center",
   },
   buttonText: {
     color: "#FFF",
     fontWeight: "bold",
+    fontSize: width * 0.04, // Font size relative to screen size
   },
   dateButton: {
     backgroundColor: "#E0E0E0",
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 20,
+    padding: height * 0.02, // Padding relative to screen height
+    borderRadius: width * 0.025, // Border radius relative to screen size
+    marginBottom: height * 0.02, // Margin relative to screen height
   },
   dateText: {
-    fontSize: 16,
+    fontSize: width * 0.04, // Font size relative to screen size
     color: "#333",
     textAlign: "center",
   },
