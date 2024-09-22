@@ -15,6 +15,29 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import useUserData from "../../hooks/useUserData"; // Import the custom hook
 
+/*
+Тоо тэнцүүлэх
+Орлогын тайлан 
+  хүлээлгэ 
+  хяналт
+  бусад зардал
+  орлого устгах засах
+  орлогын тэмдэглэл
+  харагдац
+  админ зөвшөөрөх үйлдэл
+  
+
+
+
+
+
+
+
+
+
+
+*/
+
 const HomeScreen = () => {
   const { userData, loading, error } = useUserData(); // Using the custom hook
   const navigation = useNavigation();
@@ -100,6 +123,10 @@ const HomeScreen = () => {
       <Button
         title="Өнөөдрийн гутал бүртгэл"
         onPress={() => navigation.navigate("BvrtgelScreen")}
+      />
+      <Button
+        title="Жагсаалт"
+        onPress={() => navigation.navigate("A09ShoeListScreen")}
       />
     </ScrollView>
   );

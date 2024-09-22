@@ -18,6 +18,7 @@ import BumbugurBranchScreen from "../screens/BranchDetailScreen/BumbugurBranchSc
 import UvurkhangaiBranchScreen from "../screens/BranchDetailScreen/UvurkhangaiBranchScreen";
 
 import BvrtgelScreen from "../screens/SellerScreen/BvrtgelScreen";
+import A09ShoeListScreen from "../screens/SellerScreen/A09ShoeListScreen";
 
 const Stack = createStackNavigator();
 
@@ -248,6 +249,23 @@ const SellerStackNavigator = ({ navigation }) => {
         component={UvurkhangaiBranchScreen}
         options={{
           title: "Өвөрхангай салбар",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="A09ShoeListScreen"
+        component={A09ShoeListScreen}
+        options={{
+          title: "A09",
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
               <FontAwesome

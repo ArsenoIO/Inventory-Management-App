@@ -16,8 +16,11 @@ const BvrtgelScreen = () => {
   useEffect(() => {
     const fetchTodayShoes = async () => {
       const db = getFirestore();
-      const todayStart = startOfDay(new Date()); // Өнөөдрийн эхлэл (00:00)
-      const todayEnd = endOfDay(new Date()); // Өнөөдрийн төгсгөл (23:59)
+      const startOfSeptember = new Date(2023, 8, 1); // 2023 оны 9 сарын 1 (8 нь 9-р сар учир 0-ээс эхэлдэг)
+      const endOfSeptember15 = new Date(2023, 8, 15); // 2023 оны 9 сарын 15
+
+      const todayStart = startOfDay(startOfSeptember); // 2023 оны 9 сарын 1-ний эхлэл
+      const todayEnd = endOfDay(endOfSeptember15); // 2023 оны 9 сарын 15-ны төгсгөл
 
       const shoesRef = collection(db, "shoes");
 
@@ -66,7 +69,7 @@ const BvrtgelScreen = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Өнөөдөр бүртгэгдсэн гутлууд</Text>
       <Text style={styles.totalText}>Нийт гутал: {totalShoes}</Text>
-      <FlatList
+      {/*<FlatList
         data={shoes}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
@@ -75,7 +78,7 @@ const BvrtgelScreen = () => {
             <Text>Гутлын нэр: {item.shoeName}</Text>
           </View>
         )}
-      />
+      />*/}
     </View>
   );
 };
@@ -87,6 +90,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: "#F5F5F5",
+  },
+  totalshoe: {
+    flex: 1,
+    marginTop: "10%",
   },
   title: {
     fontSize: 24,
