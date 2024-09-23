@@ -11,7 +11,6 @@ const MainScreen = () => {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text>Шинэчлэл</Text>
         <View style={styles.buttonContainer}>
           <MainButton
             title="САЛБАРЫН МЭДЭЭЛЭЛ"

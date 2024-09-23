@@ -8,9 +8,12 @@ import SalesReportScreen from "../screens/AdminScreen/SalesReport/SalesReportScr
 import ShoeDatabase from "../screens/AdminScreen/ShoeDatabase";
 import ShoeDetailScreen from "../screens/AdminScreen/ShoeDetailScreen";
 import TripScreen from "../screens/AdminScreen/Trip/TripScreen";
+import TripDetailScreen from "../screens/AdminScreen/Trip/TripDetailScreen";
 import SuppliersInfoScreen from "../screens/AdminScreen/SuppliersInfoScreen";
 import UserControl from "../screens/AdminScreen/UserControl";
 import LeasingControl from "../screens/AdminScreen/LeasingControl";
+
+import SellerSalesDetailScreen from "../screens/SellerScreen/SalesReport/SalesDetailScreen";
 
 import CentralBranchScreen from "../screens/BranchDetailScreen/CentralBranchScreen";
 import BumbugurBranchScreen from "../screens/BranchDetailScreen/BumbugurBranchScreen";
@@ -128,7 +131,24 @@ const AdminStackNavigator = ({ navigation }) => {
         name="TripScreen"
         component={TripScreen}
         options={{
-          title: "Аялалын мэдээлэл",
+          title: "Аялал",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="TripDetailScreen"
+        component={TripDetailScreen}
+        options={{
+          title: "Аялалын дэлгэрэнгүй",
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
               <FontAwesome
@@ -214,6 +234,23 @@ const AdminStackNavigator = ({ navigation }) => {
         component={UvurkhangaiBranchScreen}
         options={{
           title: "Өвөрхангай салбар",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="SellerSalesDetailScreen"
+        component={SellerSalesDetailScreen}
+        options={{
+          title: "Орлогын дэлгэрэнгүй",
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
               <FontAwesome

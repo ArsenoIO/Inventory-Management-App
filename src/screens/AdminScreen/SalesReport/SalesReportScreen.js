@@ -78,7 +78,7 @@ const SalesReportScreen = () => {
   }
 
   const handleDetailPress = (salesReport) => {
-    navigation.navigate("SalesDetailScreen", { salesReport });
+    navigation.navigate("SellerSalesDetailScreen", { salesReport });
   };
 
   const handleAddReport = async () => {

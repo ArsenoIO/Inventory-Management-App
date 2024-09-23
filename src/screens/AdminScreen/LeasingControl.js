@@ -1,198 +1,92 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Text,
-  Dimensions,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
-import { DataTable } from "react-native-paper";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
-import PaymentModal from "../../components/Modal/PaymentModal"; // Assuming you have a PaymentModal component
+import React, { useState, useEffect } from "react";
+import { View, Text, ScrollView, StyleSheet, Dimensions } from "react-native";
 
-const { width, height } = Dimensions.get("window");
+// Importing the JSON data
+const leasingData = require("../../../leasing.json"); // Make sure this path is correct
 
-const AdminLeasingScreen = () => {
-  const [leasingData, setLeasingData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
-  const [selectedLease, setSelectedLease] = useState(null); // Selected lease for payment
+const { width } = Dimensions.get("window");
+
+const LeasingTableScreen = () => {
+  const [data, setData] = useState([]);
+  const [columns, setColumns] = useState([]);
 
   useEffect(() => {
-    fetchLeasingData();
+    // Assuming the JSON has a key "Sheet1" which holds the data array
+    const jsonData = leasingData.Sheet1;
+    setData(jsonData);
+
+    // Extract the keys (column names) from the first item
+    if (jsonData.length > 0) {
+      const firstItem = jsonData[0];
+      const keys = Object.keys(firstItem);
+      setColumns(keys);
+    }
   }, []);
 
-  const fetchLeasingData = async () => {
-    const db = getFirestore();
-    const leasingCollection = collection(db, "leasing");
-
-    try {
-      const leasingSnapshot = await getDocs(leasingCollection);
-      const leasingList = leasingSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setLeasingData(leasingList);
-    } catch (error) {
-      console.error("Error fetching leasing data: ", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteLease = async (leaseId) => {
-    Alert.alert(
-      "Устгах уу?",
-      "Энэ лизингийн мэдээллийг устгахдаа итгэлтэй байна уу?",
-      [
-        { text: "Цуцлах", style: "cancel" },
-        {
-          text: "Устгах",
-          onPress: async () => {
-            try {
-              const db = getFirestore();
-              await deleteDoc(doc(db, "leasing", leaseId));
-              setLeasingData(
-                leasingData.filter((lease) => lease.id !== leaseId)
-              );
-              Alert.alert("Амжилттай устлаа", "Лизингийн мэдээлэл устгагдлаа.");
-            } catch (error) {
-              console.error("Error deleting lease: ", error);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const openPaymentModal = (lease) => {
-    setSelectedLease(lease);
-    setPaymentModalVisible(true);
-  };
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Leasing Data</Text>
-      {loading ? (
-        <Text style={styles.loadingText}>Loading...</Text>
-      ) : (
-        <ScrollView horizontal={true}>
-          <DataTable>
-            <DataTable.Header>
-              <DataTable.Title style={styles.columnFirst}>№</DataTable.Title>
-              <DataTable.Title style={styles.column}>Shoe Code</DataTable.Title>
-              <DataTable.Title style={styles.column}>
-                Advance Payment
-              </DataTable.Title>
-              <DataTable.Title style={styles.column}>Phone</DataTable.Title>
-              <DataTable.Title style={styles.column}>
-                Account No.
-              </DataTable.Title>
-              <DataTable.Title style={styles.column}>
-                Account Owner
-              </DataTable.Title>
-              <DataTable.Title style={styles.column}>Date</DataTable.Title>
-              <DataTable.Title style={styles.column}>
-                Leasing Note
-              </DataTable.Title>
-              <DataTable.Title style={styles.column}>Actions</DataTable.Title>
-            </DataTable.Header>
+    <ScrollView horizontal>
+      <View style={styles.container}>
+        <Text style={styles.header}>Лизингийн Дэлгэрэнгүй</Text>
 
-            {leasingData.map((lease, index) => (
-              <DataTable.Row key={lease.id}>
-                <DataTable.Cell style={styles.columnFirst}>
-                  {index + 1}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.column}>
-                  {lease.shoeCode}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.column}>
-                  {lease.advancePayment}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.column}>
-                  {lease.buyerPhoneNumber}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.column}>
-                  {lease.accountNumber}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.column}>
-                  {lease.accountOwner}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.column}>
-                  {new Date(
-                    lease.leasingDate.seconds * 1000
-                  ).toLocaleDateString()}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.column}>
-                  {lease.leasingNote}
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.column}>
-                  <TouchableOpacity onPress={() => openPaymentModal(lease)}>
-                    <Text style={styles.actionText}>Төлөлт</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleDeleteLease(lease.id)}>
-                    <Text style={styles.deleteText}>Устгах</Text>
-                  </TouchableOpacity>
-                </DataTable.Cell>
-              </DataTable.Row>
-            ))}
-          </DataTable>
+        {/* Table Header */}
+        <View style={styles.tableHeader}>
+          {columns.map((column, index) => (
+            <Text key={index} style={styles.tableHeaderText}>
+              {column}
+            </Text>
+          ))}
+        </View>
+
+        {/* Table Content */}
+        <ScrollView>
+          {data.map((item, rowIndex) => (
+            <View key={rowIndex} style={styles.tableRow}>
+              {columns.map((column, colIndex) => (
+                <Text key={colIndex} style={styles.tableText}>
+                  {item[column]}
+                </Text>
+              ))}
+            </View>
+          ))}
         </ScrollView>
-      )}
-      {selectedLease && (
-        <PaymentModal
-          visible={paymentModalVisible}
-          onClose={() => setPaymentModalVisible(false)}
-          lease={selectedLease}
-        />
-      )}
-    </View>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    padding: 16,
     backgroundColor: "#FFF",
-    paddingHorizontal: width * 0.05,
-    paddingVertical: height * 0.02,
   },
   header: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: height * 0.02,
+    marginBottom: 20,
   },
-  column: {
-    justifyContent: "center",
-    minWidth: 100,
+  tableHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#f5f5f5",
+    padding: 10,
   },
-  columnFirst: {
-    justifyContent: "center",
-    minWidth: 30,
-  },
-  loadingText: {
+  tableHeaderText: {
+    fontWeight: "bold",
+    width: width * 0.3, // Adjust width as needed
     textAlign: "center",
-    fontSize: 18,
-    marginTop: height * 0.05,
   },
-  actionText: {
-    color: "blue",
-    textDecorationLine: "underline",
+  tableRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
   },
-  deleteText: {
-    color: "red",
-    textDecorationLine: "underline",
-    marginTop: 5,
+  tableText: {
+    width: width * 0.3, // Adjust width as needed
+    textAlign: "center",
   },
 });
 
-export default AdminLeasingScreen;
+export default LeasingTableScreen;
