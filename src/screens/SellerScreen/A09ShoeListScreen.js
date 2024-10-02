@@ -18,11 +18,10 @@ const A09ShoeListScreen = () => {
       const db = getFirestore();
       const shoesRef = collection(db, "shoes");
 
-      // A09 кодтой гутлуудыг шүүх
+      // A09 кодтой бөгөөд ӨВӨРХАНГАЙ САЛБАР-ын гутлуудыг шүүх
       const q = query(
         shoesRef,
-        where("shoeCode", ">=", "A09"),
-        where("shoeCode", "<", "A10")
+        where("addedBranch", "==", "ӨВӨРХАНГАЙ САЛБАР") // Салбарын нэрээр шүүх
       );
 
       try {
@@ -33,7 +32,10 @@ const A09ShoeListScreen = () => {
         }));
         setShoes(shoesList); // Гутлын жагсаалтыг state-д хадгалах
       } catch (error) {
-        console.error("A09 кодтой гутлуудыг авчрахад алдаа гарлаа:", error);
+        console.error(
+          "ӨВӨРХАНГАЙ САЛБАР-ын гутлуудыг авчрахад алдаа гарлаа:",
+          error
+        );
       }
     };
 
@@ -57,13 +59,15 @@ const A09ShoeListScreen = () => {
     const groupedShoes = groupShoesByName(shoes);
 
     // HTML үүсгэх
-    let htmlContent = `<h1>A09 кодтой гутлуудын жагсаалт</h1>`;
+    let htmlContent = `<h1>ӨВӨРХАНГАЙ САЛБАР-ын гутлуудын жагсаалт</h1>`;
+    let counter = 1; // Дэс дугаарын тоолуур
 
     for (const shoeName in groupedShoes) {
       const shoeList = groupedShoes[shoeName];
       htmlContent += `<h2>${shoeName}</h2>`;
       shoeList.forEach((shoe) => {
-        htmlContent += `<p>${shoe.shoeCode} ${shoe.shoeName} - ${shoe.shoeSize} - ${shoe.shoePrice}</p>`;
+        htmlContent += `<p>${counter}. ${shoe.shoeCode} - ${shoe.shoeName} - Размер: ${shoe.shoeSize} - Үнэ: ${shoe.shoePrice}₮</p>`;
+        counter++;
       });
     }
 
