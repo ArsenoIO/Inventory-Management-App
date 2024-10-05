@@ -15,7 +15,7 @@ const AdminMainScreen = () => {
         <View style={styles.buttonContainer}>
           <MainButton
             title="САЛБАРУУДЫН МЭДЭЭЛЭЛ"
-            onPress={() => navigation.navigate("AdminHomeScreen")}
+            onPress={() => navigation.navigate("AdminBranchScreen")}
             bgColor="#00BF63"
             iconSource={require("../../assets/branchDetail.png")}
           />

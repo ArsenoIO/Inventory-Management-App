@@ -1,20 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
 import Icon from "react-native-vector-icons/Entypo";
-import BranchButton from "../../components/BranchButton";
 import { Divider } from "react-native-paper";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
-import useUserData from "../../hooks/useUserData"; // Import the custom hook
+import useUserData from "../hooks/useUserData"; // Import the custom hook
 
-const HomeScreen = () => {
+const BranchScreen = () => {
   const { userData, loading, error } = useUserData(); // Using the custom hook
   const navigation = useNavigation();
   const [branchData, setBranchData] = useState([]); // Бүх салбаруудыг хадгалах state
+  const { width } = Dimensions.get("window");
 
   useEffect(() => {
     const fetchBranchData = async () => {
-      // Хэрэв userData байхгүй бол логикийг цааш ажиллуулахгүй
       if (!userData) return;
 
       const db = getFirestore();
@@ -25,7 +37,7 @@ const HomeScreen = () => {
           // Бүх салбарын мэдээллийг татах
           const querySnapshot = await getDocs(branchesCollection);
           const allBranches = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
+            id: doc.id, // Салбарын ID-г хадгалах
             ...doc.data(),
           }));
           setBranchData(allBranches); // Бүх салбаруудыг state-д хадгалах
@@ -64,20 +76,11 @@ const HomeScreen = () => {
     return <Text>Хэрэглэгчийн мэдээлэл олдсонгүй.</Text>;
   }
 
-  // Dynamically set branch screen based on user's branch
-  const getBranchScreen = (branchName) => {
-    if (branchName === "ТӨВ САЛБАР") return "CentralBranchScreen";
-    if (branchName === "ӨВӨРХАНГАЙ САЛБАР") return "UvurkhangaiBranchScreen";
-    if (branchName === "БӨМБӨГӨР САЛБАР") return "BumbugurBranchScreen";
-    return null;
-  };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Divider style={styles.divider} />
       <View style={styles.section}>
         <View style={styles.iconAndTitle}>
-          <Icon name="shop" size={30} color="red" style={styles.icon} />
+          <Icon name="shop" size={24} color="red" style={styles.icon} />
           <Text style={styles.sectionTitle}>
             {userData.branch === "БҮХ САЛБАР"
               ? "Бүх салбарууд"
@@ -87,26 +90,32 @@ const HomeScreen = () => {
 
         <View style={styles.buttonContainer}>
           {branchData.map((branch) => (
-            <BranchButton
+            <TouchableOpacity
               key={branch.id}
-              branchName={branch.branchName}
-              shoeCount={branch.totalShoe}
-              branchScreen={getBranchScreen(branch.branchName)}
+              style={[
+                styles.button,
+                {
+                  backgroundColor:
+                    branch.branchName === "ТӨВ САЛБАР"
+                      ? "#FF8A65"
+                      : branch.branchName === "ӨВӨРХАНГАЙ САЛБАР"
+                      ? "#4CAF50"
+                      : "#03A9F4",
+                },
+              ]}
               onPress={() =>
-                navigation.navigate(getBranchScreen(branch.branchName))
+                navigation.navigate("BranchDetailScreen", {
+                  branchId: branch.id, // Салбарын ID-г дамжуулж байна
+                })
               }
-              bgColor={
-                branch.branchName === "ТӨВ САЛБАР"
-                  ? "#FF8A65"
-                  : branch.branchName === "ӨВӨРХАНГАЙ САЛБАР"
-                  ? "#4CAF50"
-                  : "#03A9F4"
-              }
-            />
+              activeOpacity={0.7} // Button дарахад opacity буурч харагдана
+            >
+              <Text style={styles.branchName}>{branch.branchName}</Text>
+              <Text style={styles.shoeCount}>{branch.totalShoe}</Text>
+            </TouchableOpacity>
           ))}
         </View>
       </View>
-      <Divider style={styles.divider} />
     </ScrollView>
   );
 };
@@ -119,13 +128,7 @@ const styles = StyleSheet.create({
   iconAndTitle: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
-  },
-  divider: {
-    marginVertical: 5,
-  },
-  icon: {
-    marginRight: 10,
+    marginBottom: 15,
   },
   section: {
     marginBottom: 40,
@@ -135,10 +138,37 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   buttonContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+    flexDirection: "column",
+    alignItems: "center", // Center the buttons
+  },
+  button: {
+    width: "90%", // Adjust the width for a nice centered look
+    backgroundColor: "#FFEB3B", // Yellow background
+    paddingVertical: 20,
+    borderRadius: 15, // Rounded corners
+    flexDirection: "row", // Layout items in a row
+    justifyContent: "space-between", // Space between title and count
+    alignItems: "center", // Center the content vertically
+    marginVertical: 10,
+  },
+  branchName: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#ffff", // Black text for the branch name
+    paddingLeft: 20,
+  },
+  shoeCount: {
+    fontSize: 32, // Larger text for the shoe count
+    fontWeight: "bold",
+    color: "#fff", // Different color for the count (blue)
+    paddingRight: 20,
+  },
+  divider: {
+    height: "100%", // Make the divider span the height of the button
+    width: 2,
+    backgroundColor: "#fff", // White divider line
+    marginHorizontal: 10, // Add space around the divider
   },
 });
 
-export default HomeScreen;
+export default BranchScreen;

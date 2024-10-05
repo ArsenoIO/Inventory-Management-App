@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, View, StyleSheet, Alert } from "react-native";
+import {
+  ScrollView,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+} from "react-native";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
 
-import ProfileButton from "../../components/ProfileButton";
-import useUserData from "../../hooks/useUserData";
+import ProfileButton from "../../../components/ProfileButton";
+import useUserData from "../../../hooks/useUserData";
 
 const SuppliersInfoScreen = () => {
   const [suppliers, setSuppliers] = useState([]);
@@ -13,24 +19,7 @@ const SuppliersInfoScreen = () => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    if (!loading && userData) {
-      if (userData.userRole === "admin") {
-        // Fetch suppliers only if the user is an admin
-        fetchSuppliers();
-      } else {
-        // If the user is not an admin, show an alert and go back
-        Alert.alert(
-          "Хандах эрхгүй",
-          "Танд нийлүүлэгчдийн мэдээлэлд хандах эрх байхгүй байна.",
-          [
-            {
-              text: "OK",
-              onPress: () => navigation.goBack(), // Redirect user back to the previous screen
-            },
-          ]
-        );
-      }
-    }
+    fetchSuppliers();
   }, [userData, loading]);
 
   const fetchSuppliers = async () => {
@@ -48,6 +37,12 @@ const SuppliersInfoScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => navigation.navigate("AddSupplierScreen")}
+      >
+        <Text style={styles.addButtonText}>Нийлүүлэгч нэмэх</Text>
+      </TouchableOpacity>
       {suppliers.map((supplier) => (
         <View key={supplier.id} style={styles.buttonContainer}>
           <ProfileButton
@@ -56,7 +51,11 @@ const SuppliersInfoScreen = () => {
             shoes={0} // Placeholder data for now
             balance={0} // Placeholder data for now
             loan={0} // Placeholder data for now
-            onPress={() => {}}
+            onPress={() =>
+              navigation.navigate("SupplierDetailScreen", {
+                supplierId: supplier.id,
+              })
+            }
           />
         </View>
       ))}
@@ -72,6 +71,18 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: "100%",
     marginBottom: 10,
+  },
+  addButton: {
+    backgroundColor: "#03A9F4",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  addButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 

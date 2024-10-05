@@ -8,7 +8,6 @@ const SalesReportItem = ({
   totalSales,
   expenses,
   createdBy,
-  isReviewed,
   onDetailPress,
 }) => {
   return (
@@ -36,10 +35,6 @@ const SalesReportItem = ({
           <Text style={styles.detailButtonText}>Дэлгэрэнгүй</Text>
         </TouchableOpacity>
       </View>
-
-      <View>
-        <Text style={styles.isReviewed}>Төлөв: {isReviewed}</Text>
-      </View>
     </View>
   );
 };
@@ -50,24 +45,22 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 10,
     marginBottom: 15,
-    borderColor: "#F4BF96",
+    borderColor: "#141E46",
     borderWidth: 1,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 10,
   },
   branch: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "bold",
   },
   date: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 15,
+    color: "#379777",
   },
   body: {
-    marginBottom: 10,
     padding: 10,
   },
   income: {
@@ -92,20 +85,20 @@ const styles = StyleSheet.create({
     flexDirection: "row", // Үүсгэсэн болон товчийг нэг мөрөнд гаргах
     justifyContent: "space-between", // Товч болон текстийг хоёр талд байрлуулах
     alignItems: "center",
-    marginTop: 10,
   },
   createdBy: {
     fontSize: 12,
-    color: "#6A9C89",
+    fontWeight: "bold",
+    color: "#379777",
   },
   detailButton: {
-    backgroundColor: "#F56C6C", // Улаан өнгө
+    backgroundColor: "#FF6969", // Улаан өнгө
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
   },
   detailButtonText: {
-    color: "#FFF",
+    color: "#FFF5E0",
     fontSize: 14,
     fontWeight: "bold",
   },

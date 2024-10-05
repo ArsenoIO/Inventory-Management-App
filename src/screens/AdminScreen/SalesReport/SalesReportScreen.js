@@ -5,24 +5,19 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  Modal,
-  Alert,
   Dimensions,
 } from "react-native";
 import {
   getFirestore,
   collection,
   getDocs,
-  addDoc,
-  Timestamp,
   query,
   where,
-  orderBy,
+  Timestamp,
 } from "firebase/firestore";
-import SalesReportItem from "../../../components/SalesReportItem";
 import { useNavigation } from "@react-navigation/native";
-import { AntDesign } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import SalesReportItem from "../../../components/SalesReportItem";
+import DateTimePicker from "@react-native-community/datetimepicker"; // Огноо сонгох
 import useUserData from "../../../hooks/useUserData";
 
 const { width, height } = Dimensions.get("window");
@@ -31,95 +26,111 @@ const SalesReportScreen = () => {
   const { userData, loading: userLoading, error } = useUserData();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [totalIncome, setTotalIncome] = useState(0); // Нийт орлого
+  const [totalSales, setTotalSales] = useState(0); // Нийт зарагдсан гутал
+  const [startDate, setStartDate] = useState(new Date()); // Эхлэх огноо
+  const [endDate, setEndDate] = useState(new Date()); // Дуусах огноо
+  const [showStartPicker, setShowStartPicker] = useState(false); // Эхлэх огноо сонгох
+  const [showEndPicker, setShowEndPicker] = useState(false); // Дуусах огноо сонгох
   const navigation = useNavigation();
 
-  useEffect(() => {
-    fetchReports(); // Fetch reports once the screen is loaded
-  }, []);
+  const adjustedStartDate = new Date(startDate);
+  adjustedStartDate.setDate(adjustedStartDate.getDate() - 1); // Subtract 1 day from the start date
 
   const fetchReports = async () => {
     setLoading(true);
     const db = getFirestore();
     const salesReportCollection = collection(db, "salesReport");
 
-    // Query to get reports sorted by date and unreviewed reports first
     const salesReportQuery = query(
       salesReportCollection,
-      orderBy("isReviewed"), // Show unreviewed reports first
-      orderBy("date", "desc") // Sort by date in descending order
+      where("date", ">=", Timestamp.fromDate(adjustedStartDate)), // Use the adjusted start date
+      where("date", "<=", Timestamp.fromDate(endDate))
     );
 
-    try {
-      const salesReportSnapshot = await getDocs(salesReportQuery);
+    const salesReportSnapshot = await getDocs(salesReportQuery);
 
-      const salesReportList = salesReportSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        date: doc.data().date.toDate().toLocaleDateString(),
-      }));
+    const salesReportList = salesReportSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      date: doc.data().date.toDate().toLocaleDateString(),
+    }));
 
-      setReports(salesReportList);
-    } catch (error) {
-      console.error("Error fetching reports: ", error);
-    } finally {
-      setLoading(false);
-    }
+    // Нийт орлого болон зарагдсан гутлын тоог нэгтгэнэ
+    const totalIncome = salesReportList.reduce(
+      (acc, report) => acc + report.totalIncome,
+      0
+    );
+    const totalSales = salesReportList.reduce(
+      (acc, report) => acc + report.totalSales,
+      0
+    );
+
+    setReports(salesReportList);
+    setTotalIncome(totalIncome);
+    setTotalSales(totalSales);
+    setLoading(false);
   };
 
-  if (userLoading) {
-    return <Text>Loading user data...</Text>;
-  }
-
-  if (error) {
-    return <Text>Error: {error}</Text>;
-  }
+  useEffect(() => {
+    fetchReports();
+  }, [startDate, endDate]); // Огноо сонгоход дахин тайлан татах
 
   const handleDetailPress = (salesReport) => {
-    navigation.navigate("SellerSalesDetailScreen", { salesReport });
-  };
-
-  const handleAddReport = async () => {
-    const db = getFirestore();
-
-    // New sales report object
-    const newReport = {
-      branch: userData.branch || "Unknown Branch", // Branch name from user data
-      date: Timestamp.fromDate(selectedDate),
-      income: 0,
-      totalSales: 0,
-      expenses: 0,
-      totalIncome: 0,
-      createdBy: userData.userName, // User who created the report
-      isReviewed: false,
-      comment: "No comment",
-    };
-
-    try {
-      await addDoc(collection(db, "salesReport"), newReport);
-
-      Alert.alert("Success", "New sales report created.", [
-        { text: "OK", onPress: fetchReports }, // Refresh the reports
-      ]);
-
-      setModalVisible(false); // Close the modal
-    } catch (error) {
-      console.error("Error adding report:", error);
-      Alert.alert("Error", "Failed to add sales report.");
-    }
-  };
-
-  const handleDateChange = (event, date) => {
-    setShowDatePicker(false); // Close the date picker
-    if (date) {
-      setSelectedDate(date); // Set the selected date
-    }
+    navigation.navigate("SalesDetailScreen", { salesReport });
   };
 
   return (
     <View style={styles.container}>
+      {/* Огноо сонгох хэсэг */}
+      <View style={styles.datePickerContainer}>
+        <TouchableOpacity
+          onPress={() => setShowStartPicker(true)}
+          style={styles.dateButton}
+        >
+          <Text>{adjustedStartDate.toDateString()}</Text>
+        </TouchableOpacity>
+        <Text> - </Text>
+        <TouchableOpacity
+          onPress={() => setShowEndPicker(true)}
+          style={styles.dateButton}
+        >
+          <Text>{endDate.toDateString()}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Эхлэх огноо сонгох DatePicker */}
+      {showStartPicker && (
+        <DateTimePicker
+          value={startDate}
+          mode="date"
+          display="default"
+          onChange={(event, date) => {
+            setShowStartPicker(false);
+            if (date) setStartDate(date);
+          }}
+        />
+      )}
+
+      {/* Дуусах огноо сонгох DatePicker */}
+      {showEndPicker && (
+        <DateTimePicker
+          value={endDate}
+          mode="date"
+          display="default"
+          onChange={(event, date) => {
+            setShowEndPicker(false);
+            if (date) setEndDate(date);
+          }}
+        />
+      )}
+
+      {/* Нийт орлого болон зарагдсан гутлын тоо */}
+      <View style={styles.totalContainer}>
+        <Text style={styles.totalText}>Орлого: {totalIncome}₮</Text>
+        <Text style={styles.totalText}>Зарагдсан гутал: {totalSales}</Text>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {loading ? (
           <Text>Loading...</Text>
@@ -139,61 +150,6 @@ const SalesReportScreen = () => {
           ))
         )}
       </ScrollView>
-
-      {/* Add Report Button */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <AntDesign name="plus" size={30} color="#FFF" />
-      </TouchableOpacity>
-
-      {/* Add Report Modal */}
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New Sales Report</Text>
-
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Text style={styles.dateText}>
-                Select Date: {selectedDate.toLocaleDateString()}
-              </Text>
-            </TouchableOpacity>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="default"
-                onChange={handleDateChange}
-              />
-            )}
-
-            <View style={styles.modalButtonContainer}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleAddReport}
-              >
-                <Text style={styles.buttonText}>Add</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };
@@ -201,26 +157,14 @@ const SalesReportScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#FFF",
   },
-  scrollContainer: {
-    padding: width * 0.04,
-  },
-  addButton: {
-    position: "absolute",
-    right: width * 0.05,
-    bottom: height * 0.03,
-    backgroundColor: "#03A9F4",
-    width: width * 0.15,
-    height: width * 0.15,
-    borderRadius: (width * 0.15) / 2,
-    justifyContent: "center",
+  submitButton: {
+    flex: 1,
+    backgroundColor: "#4CAF50",
+    padding: height * 0.02,
+    borderRadius: width * 0.025,
     alignItems: "center",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
   },
   modalContainer: {
     flex: 1,
@@ -253,28 +197,57 @@ const styles = StyleSheet.create({
     marginRight: width * 0.025,
     alignItems: "center",
   },
-  submitButton: {
-    flex: 1,
-    backgroundColor: "#4CAF50",
-    padding: height * 0.02,
-    borderRadius: width * 0.025,
-    alignItems: "center",
-  },
   buttonText: {
-    color: "#FFF",
-    fontWeight: "bold",
-    fontSize: width * 0.04,
+    color: "#fff",
+  },
+  datePickerContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
   },
   dateButton: {
-    backgroundColor: "#E0E0E0",
-    padding: height * 0.02,
-    borderRadius: width * 0.025,
-    marginBottom: height * 0.02,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    padding: 10,
+    borderRadius: 5,
   },
   dateText: {
-    fontSize: width * 0.04,
-    color: "#333",
-    textAlign: "center",
+    alignSelf: "center",
+    fontSize: 18,
+  },
+  totalContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    padding: 16,
+  },
+  totalText: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  scrollContainer: {
+    padding: 16,
+  },
+  reportItem: {
+    backgroundColor: "#F8F8F8",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  branchText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  addButton: {
+    position: "absolute",
+    right: 20,
+    bottom: 20,
+    backgroundColor: "#03A9F4",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

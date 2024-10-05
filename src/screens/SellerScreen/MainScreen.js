@@ -14,7 +14,7 @@ const MainScreen = () => {
         <View style={styles.buttonContainer}>
           <MainButton
             title="САЛБАРЫН МЭДЭЭЛЭЛ"
-            onPress={() => navigation.navigate("HomeScreen")}
+            onPress={() => navigation.navigate("BranchScreen")}
             bgColor="#00BF63"
             iconSource={require("../../assets/branchDetail.png")} // Зургийн замыг оруулж байна
           />

@@ -75,31 +75,11 @@ const IncomeAddScreen = () => {
       return;
     }
 
-    // Салбарын branchName-ийг шүүж олж, totalShoe утгыг нэмэгдүүлэх
-    const db = getFirestore();
-    const branchesCollection = collection(db, "branches");
-    const branchQuery = query(
-      branchesCollection,
-      where("branchName", "==", userData.branch)
-    );
-
-    const querySnapshot = await getDocs(branchQuery);
-    if (!querySnapshot.empty) {
-      const branchDoc = querySnapshot.docs[0]; // Эхний тохирсон баримтыг авна
-      const currentTotalShoe = branchDoc.data().totalShoe || 0;
-
-      // totalShoe-г 1-ээр нэмэгдүүлнэ
-      await updateDoc(branchDoc.ref, {
-        totalShoe: currentTotalShoe - 1,
-      });
-    } else {
-      console.error("Салбар олдсонгүй");
-    }
-
     try {
-      const shoeRef = doc(db, "shoes", shoeCode);
+      const db = getFirestore();
 
-      // Зарагдсан гутлын мэдээллийг Firebase дээр шинэчлэх
+      // Updating shoe details
+      const shoeRef = doc(db, "shoes", shoeCode);
       await updateDoc(shoeRef, {
         isSold: true,
         buyerPhoneNumber: buyerPhone,
@@ -108,49 +88,32 @@ const IncomeAddScreen = () => {
         transactionMethod: paymentMethod,
       });
 
-      if (paymentMethod === "Leasing") {
-        const leasingData = {
-          leasingDate: Timestamp.now(),
-          shoeCode: shoeCode,
-          advancePayment: advancePayment,
-          buyerPhoneNumber: buyerPhone,
-          accountNumber: accountNumber,
-          accountOwner: accountOwner,
-          leasingNote: leasingNote,
-        };
-
-        await addDoc(collection(db, "leasing"), leasingData);
-      }
-
-      // salesDetail коллекцид мэдээлэл нэмэх
+      // Adding to salesDetail
       const salesDetailRef = collection(db, "salesDetail");
-
-      // salesReport-ийн харгалзах document ID буюу saleID-г ашиглаж байгаа
       await addDoc(salesDetailRef, {
-        saleID, // Тайлангийн ID
-        shoeCode: shoeCode, // Зарсан гутлын код
-        soldPrice: totalPrice, // Зарсан үнэ
+        saleID,
+        shoeCode: shoeCode,
+        soldPrice: totalPrice,
       });
 
-      // Тайлангийн орлого болон зарсан гутлын тоог шинэчлэх
+      // Updating the salesReport income and recalculating totalIncome
       const reportRef = doc(db, "salesReport", saleID);
       const reportDoc = await getDoc(reportRef);
       if (reportDoc.exists()) {
         const currentReport = reportDoc.data();
-        const updatedTotalSales = currentReport.totalSales + 1; // Нийт зарсан гутал +1
-        const updatedTotalIncome =
-          currentReport.totalIncome + parseFloat(totalPrice); // Орлогыг нэмэх
+        const updatedIncome = currentReport.income + parseFloat(totalPrice); // Update income
+        const updatedTotalIncome = updatedIncome - currentReport.expenses; // Calculate totalIncome
 
-        // Тайлангийн нийт утгуудыг шинэчлэх
         await updateDoc(reportRef, {
-          totalSales: updatedTotalSales,
+          income: updatedIncome,
           totalIncome: updatedTotalIncome,
+          totalSales: currentReport.totalSales + 1,
         });
       }
 
       alert("Орлого амжилттай нэмэгдлээ.");
 
-      // Цэвэрлэх
+      // Reset fields
       setShoeCode("");
       setShoeData(null);
       setPrice("");
@@ -158,13 +121,6 @@ const IncomeAddScreen = () => {
       setBuyerPhone("");
       setTotalPrice("");
       setPaymentMethod("");
-
-      setAdvancePayment("");
-      setAccountNumber("");
-      setAccountOwner("");
-      setLeasingNote("");
-      // Тайлангийн дэлгэрэнгүйг шинэчлэх функц дуудах боломжтой
-
       navigation.goBack();
     } catch (error) {
       console.error("Орлого нэмэхэд алдаа гарлаа:", error);

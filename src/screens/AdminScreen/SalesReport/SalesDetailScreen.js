@@ -5,9 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Image,
-  TouchableOpacity,
   TextInput,
-  Alert, // Alert ашиглана
 } from "react-native";
 import {
   getFirestore,
@@ -18,11 +16,7 @@ import {
   query,
   where,
   updateDoc,
-  deleteDoc,
 } from "firebase/firestore";
-import { AntDesign } from "@expo/vector-icons"; // For the add button
-
-import ExpenseModal from "../../../components/ExpenseModal"; // ExpenseModal-ыг импорт хийж байна
 
 const SalesDetailScreen = ({ route, navigation }) => {
   const { salesReport } = route.params; // route-аас salesReport дамжуулсан утгыг авна
@@ -64,21 +58,6 @@ const SalesDetailScreen = ({ route, navigation }) => {
     fetchSalesDetails();
   }, []);
 
-  // Тайлбар хадгалах функц
-  const handleSaveComment = async () => {
-    try {
-      const db = getFirestore();
-      const salesReportRef = doc(db, "salesReport", salesReport.id);
-      await updateDoc(salesReportRef, {
-        comment, // Тайлбарын утгыг шинэчилнэ
-      });
-      alert("Тайлбар амжилттай хадгалагдлаа.");
-    } catch (error) {
-      console.error("Тайлбар хадгалахад алдаа гарлаа: ", error);
-      alert("Тайлбар хадгалахад алдаа гарлаа.");
-    }
-  };
-
   // Зардал нэмэх функц
   const handleSaveExpense = async (expenseAmount, newComment) => {
     try {
@@ -106,79 +85,6 @@ const SalesDetailScreen = ({ route, navigation }) => {
       console.error("Зардал нэмэхэд алдаа гарлаа: ", error);
       alert("Зардал нэмэхэд алдаа гарлаа.");
     }
-  };
-
-  const handleSubmitReport = async () => {
-    try {
-      const db = getFirestore();
-      const salesReportRef = doc(db, "salesReport", salesReport.id);
-      await updateDoc(salesReportRef, {
-        isReviewed: false, // Change to false when submitted
-      });
-      alert("Тайлан амжилттай илгээгдлээ.");
-    } catch (error) {
-      console.error("Тайлан илгээхэд алдаа гарлаа: ", error);
-      alert("Тайлан илгээхэд алдаа гарлаа.");
-    }
-  };
-
-  // Delete report function
-  const handleDeleteReport = async () => {
-    Alert.alert(
-      "Устгах",
-      "Та энэ тайланг устгахдаа итгэлтэй байна уу?",
-      [
-        {
-          text: "Цуцлах",
-          style: "cancel",
-        },
-        {
-          text: "Устгах",
-          onPress: async () => {
-            try {
-              const db = getFirestore();
-              await deleteDoc(doc(db, "salesReport", salesReport.id)); // Delete the sales report
-              alert("Тайлан амжилттай устгагдлаа.");
-              navigation.goBack(); // Navigate back after deletion
-            } catch (error) {
-              console.error("Тайлан устгахад алдаа гарлаа: ", error);
-              alert("Тайлан устгахад алдаа гарлаа.");
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  };
-
-  const handleAddIncome = () => {
-    Alert.alert(
-      "Зардлын төрөл өө сонгоно уу!",
-      "Аль нэгийг нь сонгоно уу?",
-      [
-        {
-          text: "Бусад зардал оруулах",
-          onPress: () => {
-            // Бусад зардал оруулах хэсэг
-            console.log("Бусад зардал оруулна.");
-            // Та энд бусад зардал нэмэх логикийг оруулж болно.
-            // Жишээ нь, зардлыг нэмж Firebase дээр хадгалах.
-            setModalVisible(true);
-          },
-        },
-        {
-          text: "Орлого нэмэх",
-          onPress: () => {
-            navigation.navigate("IncomeAddScreen", {
-              salesReport,
-              onIncomeAdded: fetchSalesDetails, // Орлого нэмсний дараа мэдээллийг шинэчлэх функц
-            });
-          },
-        },
-        { text: "Буцах", style: "cancel" },
-      ],
-      { cancelable: true }
-    );
   };
 
   return (
@@ -214,32 +120,10 @@ const SalesDetailScreen = ({ route, navigation }) => {
                 value={comment}
                 onChangeText={setComment}
                 style={styles.commentInput}
+                editable={false}
                 placeholder="Бусад зардал болон тэмдэглэх зүйлс..."
                 multiline
               />
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleSaveComment}
-              >
-                <Text style={styles.buttonText}>Хадгалах</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.buttonContainer}>
-              {/* Submit button */}
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleSubmitReport}
-              >
-                <Text style={styles.submitButtonText}>Илгээх</Text>
-              </TouchableOpacity>
-
-              {/* Delete button */}
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={handleDeleteReport}
-              >
-                <Text style={styles.deleteButtonText}>Устгах</Text>
-              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -279,18 +163,6 @@ const SalesDetailScreen = ({ route, navigation }) => {
           )}
         </View>
       </ScrollView>
-
-      {/* Нэмэх товч нь absolute байрлалтай */}
-      <TouchableOpacity style={styles.addButton} onPress={handleAddIncome}>
-        <AntDesign name="plus" size={30} color="#FFF" />
-      </TouchableOpacity>
-
-      {/* ExpenseModal-г дуудах */}
-      <ExpenseModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSave={handleSaveExpense} // Зардал нэмэх функц
-      />
     </View>
   );
 };
@@ -353,17 +225,6 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: "top",
   },
-  saveButton: {
-    backgroundColor: "#4CAF50",
-    padding: 10,
-    marginTop: 10,
-    borderRadius: 5,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#FFF",
-    fontWeight: "bold",
-  },
   shoeCard: {
     flexDirection: "row",
     backgroundColor: "#FFF",
@@ -385,46 +246,6 @@ const styles = StyleSheet.create({
   shoeText: {
     marginBottom: 5,
     fontSize: 14,
-  },
-  addButton: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    backgroundColor: "#03A9F4",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 8,
-  },
-  buttonContainer: {
-    flexDirection: "row", // Aligns buttons horizontally
-    justifyContent: "space-between", // Space between the buttons
-    marginTop: 20, // Adjust margin as needed
-  },
-  submitButton: {
-    flex: 1, // Makes the button take equal space
-    backgroundColor: "#219ebc", // Submit button color
-    padding: 15, // Adjust padding as needed
-    borderRadius: 10,
-    marginRight: 10, // Space between buttons
-    alignItems: "center",
-  },
-  submitButtonText: {
-    color: "#FFF",
-    fontWeight: "bold",
-  },
-  deleteButton: {
-    flex: 1, // Makes the button take equal space
-    backgroundColor: "#FF6961", // Delete button color
-    padding: 15, // Adjust padding as needed
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  deleteButtonText: {
-    color: "#FFF",
-    fontWeight: "bold",
   },
 });
 

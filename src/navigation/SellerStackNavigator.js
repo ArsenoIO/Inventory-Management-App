@@ -3,21 +3,23 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { FontAwesome } from "@expo/vector-icons"; // Back товч
 
 import MainScreen from "../screens/SellerScreen/MainScreen";
-import HomeScreen from "../screens/SellerScreen/HomeScreen";
+
+import BranchScreen from "../screens/BranchScreen";
+import BranchDetailScreen from "../screens/BranchDetailScreen";
+
 import AddShoeScreen from "../screens/SellerScreen/AddShoeScreen";
+
 import ShoeDatabase from "../screens/SellerScreen/ShoeDatabase";
 import ShoeDetailScreen from "../screens/SellerScreen/ShoeDetailScreen";
+
 import SalesReportScreen from "../screens/SellerScreen/SalesReport/SalesReportScreen";
 import SalesDetailScreen from "../screens/SellerScreen/SalesReport/SalesDetailScreen";
 import IncomeAddScreen from "../screens/SellerScreen/SalesReport/IncomeAddScreen";
+
 import ChangeBranchScreen from "../screens/SellerScreen/ChangeBranchScreen";
+
 import LeasingScreen from "../screens/SellerScreen/Leasing";
 
-import CentralBranchScreen from "../screens/BranchDetailScreen/CentralBranchScreen";
-import BumbugurBranchScreen from "../screens/BranchDetailScreen/BumbugurBranchScreen";
-import UvurkhangaiBranchScreen from "../screens/BranchDetailScreen/UvurkhangaiBranchScreen";
-
-import BvrtgelScreen from "../screens/SellerScreen/BvrtgelScreen";
 import A09ShoeListScreen from "../screens/SellerScreen/A09ShoeListScreen";
 
 const Stack = createStackNavigator();
@@ -41,8 +43,8 @@ const SellerStackNavigator = ({ navigation }) => {
         }}
       />
       <Stack.Screen
-        name="HomeScreen"
-        component={HomeScreen}
+        name="BranchScreen"
+        component={BranchScreen}
         options={{
           title: "Салбарын мэдээлэл",
           headerLeft: ({ canGoBack }) =>
@@ -194,78 +196,27 @@ const SellerStackNavigator = ({ navigation }) => {
         }}
       />
       <Stack.Screen
-        name="CentralBranchScreen"
-        component={CentralBranchScreen}
-        options={{
-          title: "Төв салбар",
-          headerLeft: ({ canGoBack }) =>
-            canGoBack ? (
-              <FontAwesome
-                name="arrow-left"
-                size={25}
-                color="black"
-                style={{ marginLeft: 25 }}
-                onPress={() => navigation.goBack()} // Буцах товч
-              />
-            ) : null,
-        }}
-      />
-      <Stack.Screen
-        name="BumbugurBranchScreen"
-        component={BumbugurBranchScreen}
-        options={{
-          title: "Бөмбөгөр салбар",
-          headerLeft: ({ canGoBack }) =>
-            canGoBack ? (
-              <FontAwesome
-                name="arrow-left"
-                size={25}
-                color="black"
-                style={{ marginLeft: 25 }}
-                onPress={() => navigation.goBack()} // Буцах товч
-              />
-            ) : null,
-        }}
-      />
-      <Stack.Screen
-        name="BvrtgelScreen"
-        component={BvrtgelScreen}
-        options={{
-          title: "Өнөөдөр",
-          headerLeft: ({ canGoBack }) =>
-            canGoBack ? (
-              <FontAwesome
-                name="arrow-left"
-                size={25}
-                color="black"
-                style={{ marginLeft: 25 }}
-                onPress={() => navigation.goBack()} // Буцах товч
-              />
-            ) : null,
-        }}
-      />
-      <Stack.Screen
-        name="UvurkhangaiBranchScreen"
-        component={UvurkhangaiBranchScreen}
-        options={{
-          title: "Өвөрхангай салбар",
-          headerLeft: ({ canGoBack }) =>
-            canGoBack ? (
-              <FontAwesome
-                name="arrow-left"
-                size={25}
-                color="black"
-                style={{ marginLeft: 25 }}
-                onPress={() => navigation.goBack()} // Буцах товч
-              />
-            ) : null,
-        }}
-      />
-      <Stack.Screen
         name="A09ShoeListScreen"
         component={A09ShoeListScreen}
         options={{
           title: "A09",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="BranchDetailScreen"
+        component={BranchDetailScreen}
+        options={{
+          title: "Салбарын дэлгэрэнгүй",
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
               <FontAwesome
