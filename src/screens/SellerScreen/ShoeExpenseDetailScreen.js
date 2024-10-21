@@ -90,14 +90,6 @@ const TripScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Шинэ аялал үүсгэх товч */}
-      <TouchableOpacity
-        style={styles.createTripButton}
-        onPress={() => navigation.navigate("AddTripScreen")}
-      >
-        <Text style={styles.buttonText}>Шинэ аялал үүсгэх</Text>
-      </TouchableOpacity>
-
       {/* Огнооны сонголт */}
       <View style={styles.datePickers}>
         <TouchableOpacity onPress={() => setShowStartPicker(true)}>
@@ -138,7 +130,7 @@ const TripScreen = () => {
             <TouchableOpacity
               style={styles.detailsButton}
               onPress={() =>
-                navigation.navigate("TripDetailScreen", { tripId: item.id })
+                navigation.navigate("TripDetail", { tripId: item.id })
               }
             >
               <Text style={styles.buttonText}>Дэлгэрэнгүй</Text>

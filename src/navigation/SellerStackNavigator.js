@@ -22,6 +22,9 @@ import LeasingScreen from "../screens/SellerScreen/Leasing";
 
 import A09ShoeListScreen from "../screens/SellerScreen/A09ShoeListScreen";
 
+import ShoeExpenseDetailScreen from "../screens/SellerScreen/ShoeExpenseDetailScreen";
+import TripDetail from "../screens/SellerScreen/TripDetail";
+
 const Stack = createStackNavigator();
 
 const SellerStackNavigator = ({ navigation }) => {
@@ -217,6 +220,40 @@ const SellerStackNavigator = ({ navigation }) => {
         component={BranchDetailScreen}
         options={{
           title: "Салбарын дэлгэрэнгүй",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="ShoeExpenseDetailScreen"
+        component={ShoeExpenseDetailScreen}
+        options={{
+          title: "Шинэ гутал",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="TripDetail"
+        component={TripDetail}
+        options={{
+          title: "Дэлгэрэнгүй",
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
               <FontAwesome

@@ -43,7 +43,6 @@ const AddOtherExpenseScreen = ({ route, navigation }) => {
         value={amount}
         onChangeText={setAmount}
         keyboardType="numeric"
-        placeholder="₮"
       />
 
       <Text style={styles.label}>Тэмдэглэл:</Text>
