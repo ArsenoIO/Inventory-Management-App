@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
-  Button,
   Image,
+  Dimensions,
 } from "react-native";
 import {
   getFirestore,
@@ -19,8 +19,11 @@ import {
   where,
   getDocs,
   deleteDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+
+const { width, height } = Dimensions.get("window");
 
 const TripDetailScreen = ({ route, navigation }) => {
   const { tripId } = route.params;
@@ -31,6 +34,8 @@ const TripDetailScreen = ({ route, navigation }) => {
   const [totalOtherExpenses, setTotalOtherExpenses] = useState(0);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [imageModalVisible, setImageModalVisible] = useState(false); // For image modal
+  const [selectedImage, setSelectedImage] = useState(null); // Track selected image
 
   useEffect(() => {
     navigation.setOptions({
@@ -73,12 +78,10 @@ const TripDetailScreen = ({ route, navigation }) => {
       const shoeExpenseList = shoeExpenseSnapshot.docs.map((doc) => doc.data());
 
       setShoeExpenses(shoeExpenseList);
-
-      const totalShoeCost = shoeExpenseList.reduce((acc, expense) => {
-        const cost = parseFloat(expense.totalCost) || 0;
-        return acc + cost;
-      }, 0);
-
+      const totalShoeCost = shoeExpenseList.reduce(
+        (acc, expense) => acc + parseFloat(expense.totalCost || 0),
+        0
+      );
       setTotalShoeExpenses(totalShoeCost);
     };
 
@@ -94,7 +97,6 @@ const TripDetailScreen = ({ route, navigation }) => {
       const expenseList = expenseSnapshot.docs.map((doc) => doc.data());
 
       setExpenses(expenseList);
-
       const totalExpenses = expenseList.reduce(
         (acc, expense) => acc + expense.amount,
         0
@@ -125,7 +127,6 @@ const TripDetailScreen = ({ route, navigation }) => {
       const db = getFirestore();
       const tripRef = doc(db, "trips", tripId);
       await deleteDoc(tripRef);
-
       Alert.alert("Амжилттай!", "Аялал амжилттай устгагдлаа.");
       navigation.goBack();
     } catch (error) {
@@ -138,10 +139,7 @@ const TripDetailScreen = ({ route, navigation }) => {
     try {
       const db = getFirestore();
       const tripRef = doc(db, "trips", tripId);
-      await updateDoc(tripRef, {
-        tripEndDate: new Date().getTime(),
-      });
-
+      await updateDoc(tripRef, { tripEndDate: new Date().getTime() });
       Alert.alert("Амжилттай!", "Аялал амжилттай дууслаа.");
       navigation.goBack();
     } catch (error) {
@@ -150,7 +148,7 @@ const TripDetailScreen = ({ route, navigation }) => {
   };
 
   if (loading) {
-    return <Text>Ачааллаж байна...</Text>;
+    return <Text style={styles.loadingText}>Ачааллаж байна...</Text>;
   }
 
   return (
@@ -161,26 +159,25 @@ const TripDetailScreen = ({ route, navigation }) => {
           {new Date(trip.tripDate).toLocaleString()}
         </Text>
         <Text style={styles.balanceText}>
-          Анхны дүн: {trip.startingBalance}
+          Анхны дүн: {trip.startingBalance}₮
         </Text>
         <Text style={styles.leftBalanceText}>
           Үлдэгдэл дүн: {calculateRemainingBalance()}₮
         </Text>
       </View>
 
-      <View style={styles.detailSection}>
-        <Text>
-          Гутлын зардал:{"  "}
-          <Text style={styles.expenseText}>{totalShoeExpenses}₮</Text>
+      <View style={styles.expenseSection}>
+        <Text style={styles.sectionTitle}>Зардлын дэлгэрэнгүй</Text>
+        <Text style={styles.expenseText}>
+          Гутлын зардал: {totalShoeExpenses}₮
         </Text>
-        <Text>
-          Бусад зардал:{"  "}
-          <Text style={styles.expenseText}>{totalOtherExpenses}₮</Text>
+        <Text style={styles.expenseText}>
+          Бусад зардал: {totalOtherExpenses}₮
         </Text>
       </View>
 
       <View style={styles.expenseSection}>
-        <Text style={styles.subTitle}>Гутлын зардлын жагсаалт:</Text>
+        <Text style={styles.sectionTitle}>Гутлын зардлын жагсаалт:</Text>
         {shoeExpenses.map((expense, index) => (
           <View key={index} style={styles.shoeExpenseCard}>
             <Text style={styles.expenseDetail}>
@@ -190,7 +187,14 @@ const TripDetailScreen = ({ route, navigation }) => {
               Үнэ: {expense.shoeExpense}₮ | Нийт үнэ: {expense.totalCost}₮
             </Text>
             {expense.image && (
-              <Image source={{ uri: expense.image }} style={styles.image} />
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedImage(expense.image);
+                  setImageModalVisible(true);
+                }}
+              >
+                <Image source={{ uri: expense.image }} style={styles.image} />
+              </TouchableOpacity>
             )}
             <Text style={styles.expenseDetail}>
               Төлөгдсөн эсэх: {expense.paymentMade}
@@ -200,7 +204,7 @@ const TripDetailScreen = ({ route, navigation }) => {
       </View>
 
       <View style={styles.expenseSection}>
-        <Text style={styles.subTitle}>Бусад зардлын жагсаалт:</Text>
+        <Text style={styles.sectionTitle}>Бусад зардлын жагсаалт:</Text>
         {expenses.map((expense, index) => (
           <View key={index} style={styles.otherExpenseCard}>
             <Text style={styles.expenseDetail}>
@@ -216,6 +220,7 @@ const TripDetailScreen = ({ route, navigation }) => {
       >
         <AntDesign name="plus" size={30} color="#FFF" />
       </TouchableOpacity>
+
       <TouchableOpacity
         style={styles.completeButton}
         onPress={handleCompleteTrip}
@@ -224,39 +229,49 @@ const TripDetailScreen = ({ route, navigation }) => {
       </TouchableOpacity>
 
       <Modal visible={modalVisible} transparent={true} animationType="slide">
-        <View style={styles.modalContainerca}>
-          <View style={styles.modalContentca}>
-            <Text style={styles.modalTitleca}>Зардлын төрөл сонгох</Text>
-
-            {/* Бусад зардал товч */}
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Зардлын төрөл сонгох</Text>
             <TouchableOpacity
-              style={styles.modalButtonca}
+              style={styles.modalButton}
               onPress={() => handleExpenseSelection("otherExpense")}
             >
-              <Text style={styles.modalButtonTextca}>Бусад зардал</Text>
+              <Text style={styles.modalButtonText}>Бусад зардал</Text>
             </TouchableOpacity>
-
-            {/* Гутлын зардал товч */}
             <TouchableOpacity
-              style={styles.modalButtonca}
+              style={styles.modalButton}
               onPress={() => handleExpenseSelection("shoeExpense")}
             >
-              <Text style={styles.modalButtonTextca}>Гутлын зардал</Text>
+              <Text style={styles.modalButtonText}>Гутлын зардал</Text>
             </TouchableOpacity>
-
-            {/* Буцах товч */}
             <TouchableOpacity
-              style={[styles.modalButtonca, styles.cancelButtonca]}
+              style={[styles.modalButton, styles.cancelButton]}
               onPress={() => setModalVisible(false)}
             >
-              <Text
-                style={[styles.modalButtonTextca, styles.cancelButtonTextca]}
-              >
+              <Text style={[styles.modalButtonText, styles.cancelButtonText]}>
                 Буцах
               </Text>
             </TouchableOpacity>
           </View>
         </View>
+      </Modal>
+
+      {/* Full-Screen Image Modal */}
+      <Modal
+        visible={imageModalVisible}
+        transparent={true}
+        animationType="fade"
+      >
+        <TouchableOpacity
+          style={styles.imageModalContainer}
+          onPress={() => setImageModalVisible(false)}
+        >
+          <Image
+            source={{ uri: selectedImage }}
+            style={styles.fullScreenImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
       </Modal>
     </ScrollView>
   );
@@ -294,18 +309,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     alignSelf: "center",
   },
-  expenseText: {
-    fontSize: 18,
-    color: "#FF6347",
-    marginBottom: 5,
-  },
-  subTitle: {
+  sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
   },
-  expenseSection: {
-    marginTop: 20,
+  expenseText: {
+    fontSize: 18,
+    color: "#333",
+    marginBottom: 5,
   },
   shoeExpenseCard: {
     backgroundColor: "#FFF",
@@ -326,10 +338,20 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   image: {
-    width: 100,
-    height: 100,
+    width: width * 0.3,
+    height: width * 0.3,
     borderRadius: 8,
     marginTop: 10,
+  },
+  fullScreenImage: {
+    width: "100%",
+    height: "100%",
+  },
+  imageModalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   addButton: {
     position: "absolute",
@@ -364,32 +386,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     padding: 20,
     borderRadius: 10,
-    width: 300,
+    width: "80%",
     alignItems: "center",
   },
   modalTitle: {
     fontSize: 18,
-    marginBottom: 20,
-  },
-  modalContainerca: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Dark transparent background
-  },
-  modalContentca: {
-    backgroundColor: "#FFF",
-    padding: 20,
-    borderRadius: 10,
-    width: "80%",
-    alignItems: "center",
-  },
-  modalTitleca: {
-    fontSize: 18,
     fontWeight: "bold",
     marginBottom: 20,
   },
-  modalButtonca: {
+  modalButton: {
     backgroundColor: "#03A9F4",
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -398,16 +403,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-  modalButtonTextca: {
+  modalButtonText: {
     color: "#FFF",
     fontSize: 16,
     fontWeight: "bold",
   },
-  cancelButtonca: {
-    backgroundColor: "#FF6961", // Red background for cancel button
+  cancelButton: {
+    backgroundColor: "#FF6961",
   },
-  cancelButtonTextca: {
+  cancelButtonText: {
     color: "#FFF",
+  },
+  loadingText: {
+    textAlign: "center",
+    marginTop: 20,
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });
 

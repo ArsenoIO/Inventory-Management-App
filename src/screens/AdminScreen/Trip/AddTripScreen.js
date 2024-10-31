@@ -16,7 +16,6 @@ const AddTripScreen = ({ navigation }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [startingBalance, setStartingBalance] = useState("");
 
-  // Автоматаар үүсэх утгууд
   const remainingBalance = parseFloat(startingBalance) || 0;
   const shoeExpenses = 0;
   const otherExpenses = 0;
@@ -26,26 +25,19 @@ const AddTripScreen = ({ navigation }) => {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity onPress={handleAddTrip}>
-          <MaterialIcons
-            name="save"
-            size={24}
-            color="black"
-            style={{ marginRight: 16 }}
-          />
+        <TouchableOpacity onPress={handleAddTrip} style={styles.saveButton}>
+          <MaterialIcons name="save" size={24} color="white" />
         </TouchableOpacity>
       ),
     });
   }, [navigation, tripDate, startingBalance]);
 
-  // Огнооны сонголтын функц
   const onDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || tripDate;
     setShowDatePicker(false);
     setTripDate(currentDate);
   };
 
-  // Аяллыг Firestore-д хадгалах функц
   const handleAddTrip = async () => {
     if (!startingBalance) {
       Alert.alert("Дүнгээ оруулна уу!!");
@@ -56,28 +48,28 @@ const AddTripScreen = ({ navigation }) => {
       await addDoc(collection(db, "trips"), {
         tripDate: tripDate.getTime(),
         startingBalance: parseFloat(startingBalance),
-        remainingBalance: remainingBalance, // Үлдэгдэл дүн
-        shoeExpenses: shoeExpenses, // Гутлын зардал
-        otherExpenses: otherExpenses, // Бусад зардал
-        purchasedShoesCount: purchasedShoesCount, // Худалдан авсан гутлын тоо
-        additionalNotes: additionalNotes, // Нэмэлт тэмдэглэл
+        remainingBalance: remainingBalance,
+        shoeExpenses: shoeExpenses,
+        otherExpenses: otherExpenses,
+        purchasedShoesCount: purchasedShoesCount,
+        additionalNotes: additionalNotes,
       });
       Alert.alert("Амжилттай!", "Аялал амжилттай нэмэгдлээ.");
-      navigation.goBack(); // Буцаж шилжих
+      navigation.goBack();
     } catch (error) {
       Alert.alert("Аялал үүсгэхэд алдаа гарлаа!");
     }
   };
 
-  // Setting up the save button in the header
-
   return (
     <View style={styles.container}>
       {/* Огноо сонгох */}
-      <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-        <Text style={styles.text}>
-          Огноо сонгох: {tripDate.toLocaleString()}
-        </Text>
+      <Text style={styles.label}>Аяллын огноо:</Text>
+      <TouchableOpacity
+        style={styles.datePicker}
+        onPress={() => setShowDatePicker(true)}
+      >
+        <Text style={styles.dateText}>{tripDate.toLocaleDateString()}</Text>
       </TouchableOpacity>
       {showDatePicker && (
         <DateTimePicker
@@ -89,7 +81,7 @@ const AddTripScreen = ({ navigation }) => {
       )}
 
       {/* Эхлэх дүн оруулах */}
-      <Text style={styles.text}>Эхлэх дүн:</Text>
+      <Text style={styles.label}>Эхлэх дүн:</Text>
       <TextInput
         style={styles.input}
         value={startingBalance}
@@ -99,11 +91,14 @@ const AddTripScreen = ({ navigation }) => {
       />
 
       {/* Автоматаар үүсэх утгуудыг харуулах */}
-      <View style={styles.readOnlyFields}>
-        <Text style={styles.text}>Үлдэгдэл дүн: {remainingBalance}₮</Text>
-        <Text style={styles.text}>Гутлын зардал: {shoeExpenses}₮</Text>
-        <Text style={styles.text}>Бусад зардал: {otherExpenses}₮</Text>
-        <Text style={styles.text}>
+      <View style={styles.readOnlyContainer}>
+        <Text style={styles.readOnlyLabel}>Автоматаар үүсэх утгууд:</Text>
+        <Text style={styles.readOnlyText}>
+          Үлдэгдэл дүн: {remainingBalance}₮
+        </Text>
+        <Text style={styles.readOnlyText}>Гутлын зардал: {shoeExpenses}₮</Text>
+        <Text style={styles.readOnlyText}>Бусад зардал: {otherExpenses}₮</Text>
+        <Text style={styles.readOnlyText}>
           Худалдан авсан гутал: {purchasedShoesCount}
         </Text>
       </View>
@@ -113,25 +108,59 @@ const AddTripScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: 20,
+    backgroundColor: "#FFF",
+    flex: 1,
+  },
+  saveButton: {
+    backgroundColor: "#4CAF50",
+    padding: 10,
+    borderRadius: 10,
+    marginRight: 10,
+  },
+  label: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginVertical: 10,
+  },
+  datePicker: {
+    backgroundColor: "#e0f7fa",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    alignItems: "center",
+  },
+  dateText: {
+    fontSize: 16,
+    color: "#00796b",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 8,
+    borderColor: "#bbb",
+    padding: 12,
     marginVertical: 5,
-    borderRadius: 5,
+    borderRadius: 8,
+    fontSize: 16,
+    backgroundColor: "#fafafa",
   },
-  readOnlyFields: {
+  readOnlyContainer: {
     marginTop: 20,
-    padding: 10,
+    padding: 15,
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 5,
+    borderRadius: 8,
+    backgroundColor: "#f1f8e9",
   },
-  text: {
-    fontSize: 17,
-    margin: 5,
+  readOnlyLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "#388e3c",
+  },
+  readOnlyText: {
+    fontSize: 16,
+    marginVertical: 3,
+    color: "#455a64",
   },
 });
 

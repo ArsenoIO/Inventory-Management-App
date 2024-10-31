@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
 import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 const AddOtherExpenseScreen = ({ route, navigation }) => {
@@ -7,7 +14,6 @@ const AddOtherExpenseScreen = ({ route, navigation }) => {
   const [amount, setAmount] = useState(""); // Зардлын мөнгөн дүн
   const [note, setNote] = useState(""); // Тэмдэглэл
 
-  // Зардлыг Firestore-д хадгалах функц
   const handleAddExpense = async () => {
     if (!amount) {
       Alert.alert("Алдаа", "Зардлын мөнгөн дүнг оруулна уу.");
@@ -18,17 +24,16 @@ const AddOtherExpenseScreen = ({ route, navigation }) => {
       const db = getFirestore();
       const expenseRef = collection(db, "otherExpense");
 
-      // Firestore-д зардлыг хадгалах
       await addDoc(expenseRef, {
-        tripID: tripId, // Тухайн аяллын ID
-        amount: parseFloat(amount), // Зардлын мөнгөн дүн
-        note: note || "Бусад зардал", // Тэмдэглэл (default: Бусад зардал)
-        createdAt: new Date().getTime(), // Зардал үүсгэсэн огноо
-        type: "otherExpense", // Type of the expense
+        tripID: tripId,
+        amount: parseFloat(amount),
+        note: note || "Бусад зардал",
+        createdAt: new Date().getTime(),
+        type: "otherExpense",
       });
 
       Alert.alert("Амжилттай", "Зардал амжилттай нэмэгдлээ.");
-      navigation.goBack(); // Буцаж шилжих
+      navigation.goBack();
     } catch (error) {
       console.error("Зардал нэмэхэд алдаа гарлаа: ", error);
       Alert.alert("Алдаа", "Зардал нэмэхэд алдаа гарлаа.");
@@ -43,6 +48,7 @@ const AddOtherExpenseScreen = ({ route, navigation }) => {
         value={amount}
         onChangeText={setAmount}
         keyboardType="numeric"
+        placeholder="Мөнгөн дүнг оруулна уу"
       />
 
       <Text style={styles.label}>Тэмдэглэл:</Text>
@@ -53,7 +59,9 @@ const AddOtherExpenseScreen = ({ route, navigation }) => {
         placeholder="Тэмдэглэл оруулах"
       />
 
-      <Button title="Зардал нэмэх" onPress={handleAddExpense} />
+      <TouchableOpacity style={styles.addButton} onPress={handleAddExpense}>
+        <Text style={styles.buttonText}>Зардал нэмэх</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -61,19 +69,35 @@ const AddOtherExpenseScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 20,
     backgroundColor: "#FFF",
   },
   label: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
-    padding: 10,
-    borderRadius: 5,
+    padding: 12,
+    borderRadius: 8,
     marginBottom: 16,
+    fontSize: 16,
+    backgroundColor: "#FAFAFA",
+  },
+  addButton: {
+    backgroundColor: "#03A9F4",
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  buttonText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });
 

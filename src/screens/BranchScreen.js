@@ -25,6 +25,25 @@ const BranchScreen = () => {
   const [branchData, setBranchData] = useState([]); // Бүх салбаруудыг хадгалах state
   const { width } = Dimensions.get("window");
 
+  const fetchUnsoldShoeCount = async (branchName) => {
+    const db = getFirestore();
+    const shoesCollection = collection(db, "shoes");
+
+    try {
+      const unsoldShoesQuery = query(
+        shoesCollection,
+        where("addedBranch", "==", branchName),
+        where("isSold", "==", true) // Only unsold shoes
+      );
+
+      const unsoldShoesSnapshot = await getDocs(unsoldShoesQuery);
+      const unsoldCount = unsoldShoesSnapshot.size;
+      console.log(`Зарагдаагүй гутлын тоо (${branchName}): ${unsoldCount}`);
+    } catch (error) {
+      console.error("Зарагдаагүй гутлын тоог авахад алдаа гарлаа:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchBranchData = async () => {
       if (!userData) return;
@@ -34,15 +53,18 @@ const BranchScreen = () => {
 
       try {
         if (userData.branch === "БҮХ САЛБАР") {
-          // Бүх салбарын мэдээллийг татах
           const querySnapshot = await getDocs(branchesCollection);
           const allBranches = querySnapshot.docs.map((doc) => ({
-            id: doc.id, // Салбарын ID-г хадгалах
+            id: doc.id,
             ...doc.data(),
           }));
-          setBranchData(allBranches); // Бүх салбаруудыг state-д хадгалах
+          setBranchData(allBranches);
+
+          // Each branch unsold count
+          allBranches.forEach((branch) =>
+            fetchUnsoldShoeCount(branch.branchName)
+          );
         } else {
-          // Хэрэглэгчийн салбарын мэдээллийг татах
           const querySnapshot = await getDocs(
             query(
               branchesCollection,
@@ -51,7 +73,10 @@ const BranchScreen = () => {
           );
           if (!querySnapshot.empty) {
             const branchData = querySnapshot.docs[0].data();
-            setBranchData([{ id: querySnapshot.docs[0].id, ...branchData }]); // Тухайн салбарын мэдээллийг state-д хадгалах
+            setBranchData([{ id: querySnapshot.docs[0].id, ...branchData }]);
+
+            // Fetch unsold count for the specific branch
+            fetchUnsoldShoeCount(userData.branch);
           } else {
             console.log("Салбар олдсонгүй.");
           }
