@@ -6,7 +6,7 @@ const ProfileButton = ({ initials, name, shoes, balance, loan, onPress }) => {
   return (
     <TouchableOpacity style={styles.button} onPress={onPress}>
       <View style={styles.leftSection}>
-        <Avatar.Icon size={50} icon="account" style={styles.avatar} />
+        <Avatar.Icon size={60} icon="account" style={styles.avatar} />
         <Text style={styles.initials}>{initials}</Text>
       </View>
       <View style={styles.divider} />

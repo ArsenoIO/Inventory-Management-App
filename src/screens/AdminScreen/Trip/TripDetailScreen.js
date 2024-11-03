@@ -123,16 +123,39 @@ const TripDetailScreen = ({ route, navigation }) => {
   };
 
   const handleDeleteTrip = async () => {
-    try {
-      const db = getFirestore();
-      const tripRef = doc(db, "trips", tripId);
-      await deleteDoc(tripRef);
-      Alert.alert("Амжилттай!", "Аялал амжилттай устгагдлаа.");
-      navigation.goBack();
-    } catch (error) {
-      Alert.alert("Алдаа", "Аяллыг устгахад алдаа гарлаа.");
-      console.log(error);
-    }
+    Alert.alert(
+      "Баталгаажуулалт",
+      "Энэ аяллыг болон холбогдох бүх зардлыг устгахдаа итгэлтэй байна уу?",
+      [
+        {
+          text: "Үгүй",
+          style: "cancel",
+        },
+        {
+          text: "Тийм",
+          onPress: async () => {
+            try {
+              const db = getFirestore();
+              const tripRef = doc(db, "trips", tripId);
+              await deleteDoc(tripRef);
+
+              // Холбогдох зардлуудыг устгах функц дуудах
+              await handleDeleteExpensesByTripId(tripId);
+
+              Alert.alert(
+                "Амжилттай!",
+                "Аялал болон холбогдох зардлууд устгагдлаа."
+              );
+              navigation.goBack();
+            } catch (error) {
+              Alert.alert("Алдаа", "Аяллыг устгахад алдаа гарлаа.");
+              console.log(error);
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   const handleCompleteTrip = async () => {
@@ -147,44 +170,67 @@ const TripDetailScreen = ({ route, navigation }) => {
     }
   };
 
+  const handleDeleteSingleExpense = async (expenseId, collectionName) => {
+    try {
+      const db = getFirestore();
+      const expenseRef = doc(db, collectionName, expenseId);
+      await deleteDoc(expenseRef);
+      Alert.alert("Амжилттай!", "Зардал амжилттай устгагдлаа.");
+    } catch (error) {
+      console.error("Устгалтын алдаа гарлаа:", error);
+      Alert.alert("Алдаа", "Зардлыг устгахад алдаа гарлаа.");
+    }
+  };
+
   if (loading) {
     return <Text style={styles.loadingText}>Ачааллаж байна...</Text>;
   }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <AntDesign name="plus" size={30} color="#FFF" />
+      </TouchableOpacity>
+
       <View style={styles.detailSection}>
-        <Text style={styles.title}>Аяллын дэлгэрэнгүй</Text>
-        <Text style={styles.balanceText}>
+        <Text style={styles.date}>
           {new Date(trip.tripDate).toLocaleString()}
         </Text>
-        <Text style={styles.balanceText}>
-          Анхны дүн: {trip.startingBalance}₮
+        <Text style={styles.balanceLabel}>
+          Анхны дүн:{" "}
+          <Text style={styles.balanceText}>{trip.startingBalance}</Text>
         </Text>
-        <Text style={styles.leftBalanceText}>
-          Үлдэгдэл дүн: {calculateRemainingBalance()}₮
+        <Text style={styles.balanceLabel}>
+          Үлдэгдэл дүн:{" "}
+          <Text style={styles.leftBalanceText}>
+            {calculateRemainingBalance()}
+          </Text>
         </Text>
       </View>
 
       <View style={styles.expenseSection}>
         <Text style={styles.sectionTitle}>Зардлын дэлгэрэнгүй</Text>
         <Text style={styles.expenseText}>
-          Гутлын зардал: {totalShoeExpenses}₮
+          Гутлын зардал: {totalShoeExpenses}
         </Text>
         <Text style={styles.expenseText}>
-          Бусад зардал: {totalOtherExpenses}₮
+          Бусад зардал: {totalOtherExpenses}
         </Text>
       </View>
 
       <View style={styles.expenseSection}>
         <Text style={styles.sectionTitle}>Гутлын зардлын жагсаалт:</Text>
+
         {shoeExpenses.map((expense, index) => (
           <View key={index} style={styles.shoeExpenseCard}>
             <Text style={styles.expenseDetail}>
               Код: {expense.supplierCode} | Тоо: {expense.purchasedShoesCount}
             </Text>
             <Text style={styles.expenseDetail}>
-              Үнэ: {expense.shoeExpense}₮ | Нийт үнэ: {expense.totalCost}₮
+              Үнэ: {expense.shoeExpense} | Нийт үнэ: {expense.totalCost}
             </Text>
             {expense.image && (
               <TouchableOpacity
@@ -196,9 +242,18 @@ const TripDetailScreen = ({ route, navigation }) => {
                 <Image source={{ uri: expense.image }} style={styles.image} />
               </TouchableOpacity>
             )}
+
             <Text style={styles.expenseDetail}>
               Төлөгдсөн эсэх: {expense.paymentMade}
             </Text>
+
+            <TouchableOpacity
+              onPress={() =>
+                handleDeleteSingleExpense(expense.id, "shoeExpense")
+              }
+            >
+              <Text>Устгах</Text>
+            </TouchableOpacity>
           </View>
         ))}
       </View>
@@ -208,18 +263,18 @@ const TripDetailScreen = ({ route, navigation }) => {
         {expenses.map((expense, index) => (
           <View key={index} style={styles.otherExpenseCard}>
             <Text style={styles.expenseDetail}>
-              {expense.note}: {expense.amount}₮
+              {expense.note}: {expense.amount}
             </Text>
+
+            <TouchableOpacity
+              onPress={() => handleDeleteExpensesByTripId(expense.tripID)}
+              style={styles.deleteButton}
+            >
+              <Text style={styles.deleteButtonText}>Устгах</Text>
+            </TouchableOpacity>
           </View>
         ))}
       </View>
-
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <AntDesign name="plus" size={30} color="#FFF" />
-      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.completeButton}
@@ -279,69 +334,77 @@ const TripDetailScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: width * 0.04,
     flexGrow: 1,
     backgroundColor: "#FFF",
   },
   detailSection: {
-    marginBottom: 20,
-    padding: 16,
+    marginBottom: height * 0.02,
+    padding: width * 0.04,
     backgroundColor: "#F9FAFB",
-    borderRadius: 8,
+    borderRadius: width * 0.02,
     elevation: 2,
   },
-  title: {
-    fontSize: 22,
+  date: {
+    fontSize: width * 0.03,
+    alignSelf: "flex-end",
+    marginBottom: height * 0.015,
+  },
+  balanceLabel: {
+    fontSize: width * 0.04,
+    marginBottom: height * 0.005,
     fontWeight: "bold",
-    marginBottom: 10,
+    alignSelf: "flex-start",
   },
   balanceText: {
-    fontSize: 18,
+    fontSize: width * 0.045,
     color: "#00C853",
-    marginBottom: 5,
+    marginBottom: height * 0.005,
     fontWeight: "bold",
-    alignSelf: "center",
+    alignSelf: "flex-end",
   },
   leftBalanceText: {
-    fontSize: 18,
+    fontSize: width * 0.045,
     color: "#FF6347",
-    marginBottom: 5,
+    marginBottom: height * 0.005,
     fontWeight: "bold",
-    alignSelf: "center",
+    alignSelf: "flex-start",
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: width * 0.04,
     fontWeight: "bold",
-    marginBottom: 10,
+    color: "#243642",
+    marginVertical: height * 0.02,
+    alignSelf: "flex-end",
   },
   expenseText: {
-    fontSize: 18,
+    fontSize: width * 0.04,
     color: "#333",
-    marginBottom: 5,
+    marginBottom: height * 0.005,
   },
   shoeExpenseCard: {
     backgroundColor: "#FFF",
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 10,
+    padding: width * 0.04,
+    borderRadius: width * 0.02,
+    marginBottom: height * 0.01,
     elevation: 1,
   },
   otherExpenseCard: {
     backgroundColor: "#FFF",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
+    padding: width * 0.03,
+    borderRadius: width * 0.02,
+    marginBottom: height * 0.01,
     elevation: 1,
   },
   expenseDetail: {
-    fontSize: 16,
-    marginBottom: 5,
+    fontSize: width * 0.04,
+    marginBottom: height * 0.005,
   },
   image: {
     width: width * 0.3,
     height: width * 0.3,
-    borderRadius: 8,
-    marginTop: 10,
+    borderRadius: width * 0.02,
+    marginTop: height * 0.01,
   },
   fullScreenImage: {
     width: "100%",
@@ -355,25 +418,26 @@ const styles = StyleSheet.create({
   },
   addButton: {
     position: "absolute",
-    right: 20,
-    bottom: 80,
+    right: width * 0.1,
+    bottom: height * 0.1,
     backgroundColor: "#03A9F4",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: width * 0.15,
+    height: width * 0.15,
+    borderRadius: width * 0.075,
     justifyContent: "center",
     alignItems: "center",
     elevation: 4,
   },
   completeButton: {
-    marginTop: 20,
-    padding: 12,
+    marginTop: height * 0.12,
+    padding: width * 0.03,
     backgroundColor: "#4CAF50",
-    borderRadius: 5,
+    borderRadius: width * 0.02,
     alignItems: "center",
   },
   completeButtonText: {
     color: "#FFF",
+    fontSize: width * 0.04,
     fontWeight: "bold",
   },
   modalContainer: {
@@ -384,28 +448,28 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "#FFF",
-    padding: 20,
-    borderRadius: 10,
+    padding: width * 0.05,
+    borderRadius: width * 0.025,
     width: "80%",
     alignItems: "center",
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: width * 0.04,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: height * 0.02,
   },
   modalButton: {
     backgroundColor: "#03A9F4",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.04,
+    borderRadius: width * 0.02,
     width: "100%",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: height * 0.01,
   },
   modalButtonText: {
     color: "#FFF",
-    fontSize: 16,
+    fontSize: width * 0.04,
     fontWeight: "bold",
   },
   cancelButton: {
@@ -416,8 +480,20 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     textAlign: "center",
-    marginTop: 20,
-    fontSize: 18,
+    marginTop: height * 0.05,
+    fontSize: width * 0.045,
+    fontWeight: "bold",
+  },
+  deleteButton: {
+    backgroundColor: "#FF6347",
+    padding: width * 0.02,
+    borderRadius: width * 0.02,
+    marginTop: height * 0.01,
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    color: "#FFF",
+    fontSize: width * 0.035,
     fontWeight: "bold",
   },
 });

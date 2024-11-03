@@ -8,81 +8,132 @@ import {
   Alert,
   ScrollView,
   TextInput,
+  Dimensions,
 } from "react-native";
 import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
-import { FontAwesome } from "@expo/vector-icons"; // Icon for default profile
-import * as ImagePicker from "expo-image-picker"; // For image picking
-import { launchCameraAsync } from "expo-image-picker"; // For camera usage
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { FontAwesome } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { launchCameraAsync } from "expo-image-picker";
+
+const { width } = Dimensions.get("window");
 
 const SupplierDetailScreen = ({ route }) => {
   const { supplierId } = route.params;
   const [supplier, setSupplier] = useState(null);
-  const [editMode, setEditMode] = useState(false); // Toggle edit mode
+  const [editMode, setEditMode] = useState(false);
   const [updatedSupplier, setUpdatedSupplier] = useState({});
-  const [selectedImage, setSelectedImage] = useState(null); // For storing the selected image
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     const fetchSupplier = async () => {
-      const db = getFirestore();
-      const supplierDoc = doc(db, "names", supplierId);
-      const supplierSnap = await getDoc(supplierDoc);
-      if (supplierSnap.exists()) {
-        setSupplier(supplierSnap.data());
-        setUpdatedSupplier(supplierSnap.data()); // Initialize updatedSupplier with current data
+      try {
+        const db = getFirestore();
+        const supplierDoc = doc(db, "names", supplierId);
+        const supplierSnap = await getDoc(supplierDoc);
+
+        if (supplierSnap.exists()) {
+          setSupplier(supplierSnap.data());
+          setUpdatedSupplier(supplierSnap.data());
+        } else {
+          console.log("Баримт олдсонгүй.");
+          Alert.alert("Анхаар!", "Өгөгдөл олдсонгүй.");
+        }
+      } catch (error) {
+        console.error("Өгөгдлийг татахад алдаа гарлаа:", error);
+        Alert.alert("Алдаа", "Өгөгдлийг татахад алдаа гарлаа.");
       }
     };
+
     fetchSupplier();
   }, [supplierId]);
 
-  // Handle saving updated data
+  const uploadImageToStorage = async (uri) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const storage = getStorage();
+    const storageRef = ref(storage, `names/${supplierId}-${Date.now()}`);
+
+    await uploadBytes(storageRef, blob);
+    const downloadURL = await getDownloadURL(storageRef);
+    console.log("Зургийн URL:", downloadURL);
+    return downloadURL;
+  };
+
   const handleSave = async () => {
     try {
       const db = getFirestore();
-      const supplierRef = doc(db, "suppliers", supplierId);
-      await updateDoc(supplierRef, updatedSupplier); // Update Firestore with new data
-      Alert.alert("Success", "Supplier information updated successfully.");
+      const supplierRef = doc(db, "names", supplierId);
+
+      // Баримт байгаа эсэхийг шалгах
+      const docSnap = await getDoc(supplierRef);
+      if (!docSnap.exists()) {
+        Alert.alert(
+          "Алдаа",
+          "Өгөгдлийн санд нийлүүлэгчийн мэдээлэл олдсонгүй."
+        );
+        return;
+      }
+
+      let newImageUrl = updatedSupplier.imageUrl;
+
+      // Шинээр зураг нэмэх
+      if (selectedImage) {
+        newImageUrl = await uploadImageToStorage(selectedImage);
+      }
+
+      // State-д шинэ зураг оруулах
+      const newSupplierData = {
+        ...updatedSupplier,
+        imageUrl: newImageUrl,
+      };
+
+      // Баримт шинэчлэх
+      await updateDoc(supplierRef, newSupplierData);
+      setSupplier(newSupplierData); // Шинэчлэгдсэн өгөгдлийг state-д оруулах
+      setUpdatedSupplier(newSupplierData);
+      setSelectedImage(null); // Reset selected image
+
+      Alert.alert("Амжилттай");
       setEditMode(false);
     } catch (error) {
-      Alert.alert("Error", "Failed to update supplier information.");
+      Alert.alert("Алдаа", "Нийлүүлэгчийн мэдээллийг шинэчлэхэд алдаа гарлаа.");
+      console.log(error);
     }
   };
 
-  // Handle image picking
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
+      quality: 0.9,
     });
 
     if (!result.canceled) {
-      setSelectedImage(result.uri); // Set the selected image
-      setUpdatedSupplier({ ...updatedSupplier, imageUrl: result.uri }); // Update the image in the state
+      setSelectedImage(result.assets[0].uri);
     }
   };
 
-  // Handle camera for taking profile picture
   const takePicture = async () => {
-    let result = await launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Камер руу хандах зөвшөөрөл хэрэгтэй байна!");
+      return;
+    }
+
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.9,
     });
 
     if (!result.canceled) {
-      setSelectedImage(result.uri); // Set the selected image
-      setUpdatedSupplier({ ...updatedSupplier, imageUrl: result.uri }); // Update the image in the state
+      setSelectedImage(result.assets[0].uri);
     }
   };
-
   if (!supplier) {
-    return <Text>Loading...</Text>;
+    return <Text style={styles.loadingText}>Татаж байна...</Text>;
   }
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Profile Section */}
       <View style={styles.profileSection}>
         <TouchableOpacity onPress={editMode ? pickImage : null}>
           {selectedImage ? (
@@ -96,76 +147,71 @@ const SupplierDetailScreen = ({ route }) => {
               style={styles.profileImage}
             />
           ) : (
-            <FontAwesome name="user-circle" size={100} color="#ccc" />
+            <FontAwesome name="user-circle" size={width * 0.25} color="#ccc" />
           )}
         </TouchableOpacity>
 
         {editMode && (
           <View style={styles.imageButtons}>
             <TouchableOpacity style={styles.cameraButton} onPress={takePicture}>
-              <Text>Camera</Text>
+              <Text style={styles.imageButtonText}>Камераар авах</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.libraryButton} onPress={pickImage}>
-              <Text>Library</Text>
+              <Text style={styles.imageButtonText}>Файлаас сонгох</Text>
             </TouchableOpacity>
           </View>
         )}
-
-        <View style={styles.profileInfo}>
-          {editMode ? (
-            <TextInput
-              style={styles.input}
-              value={updatedSupplier.nameDetail}
-              onChangeText={(text) =>
-                setUpdatedSupplier({ ...updatedSupplier, nameDetail: text })
-              }
-            />
-          ) : (
-            <Text style={styles.name}>{supplier.nameDetail}</Text>
-          )}
-
-          <Text style={styles.phone}>
-            Утас:
-            {editMode ? (
-              <TextInput
-                style={styles.input}
-                value={updatedSupplier.phoneNumber}
-                onChangeText={(text) =>
-                  setUpdatedSupplier({ ...updatedSupplier, phoneNumber: text })
-                }
-              />
-            ) : (
-              supplier.phoneNumber || "Мэдээлэл байхгүй"
-            )}
-          </Text>
-
-          <Text style={styles.additionalInfo}>
-            {editMode ? (
-              <TextInput
-                style={styles.input}
-                value={updatedSupplier.additionalInfo}
-                onChangeText={(text) =>
-                  setUpdatedSupplier({
-                    ...updatedSupplier,
-                    additionalInfo: text,
-                  })
-                }
-              />
-            ) : (
-              supplier.additionalInfo || "Нэмэлт мэдээлэл байхгүй"
-            )}
-          </Text>
-        </View>
       </View>
 
-      {/* Divider */}
-      <View style={styles.divider} />
+      <View style={styles.profileInfo}>
+        {editMode ? (
+          <TextInput
+            style={styles.input}
+            value={updatedSupplier.nameDetail}
+            onChangeText={(text) =>
+              setUpdatedSupplier({ ...updatedSupplier, nameDetail: text })
+            }
+            placeholder="Нэр"
+          />
+        ) : (
+          <Text style={styles.name}>{supplier.nameDetail}</Text>
+        )}
 
-      {/* Financial Section */}
+        <Text style={styles.label}>Утас:</Text>
+        {editMode ? (
+          <TextInput
+            style={styles.input}
+            value={updatedSupplier.phoneNumber}
+            onChangeText={(text) =>
+              setUpdatedSupplier({ ...updatedSupplier, phoneNumber: text })
+            }
+            placeholder="Утасны дугаар"
+            keyboardType="phone-pad"
+          />
+        ) : (
+          <Text style={styles.text}>{supplier.phoneNumber || "Хоосон"}</Text>
+        )}
+
+        <Text style={styles.label}>Тэмдэглэл:</Text>
+        {editMode ? (
+          <TextInput
+            style={[styles.input, styles.notesInput]}
+            value={updatedSupplier.additionalInfo}
+            onChangeText={(text) =>
+              setUpdatedSupplier({ ...updatedSupplier, additionalInfo: text })
+            }
+            placeholder="Тэмдэглэл"
+            multiline
+          />
+        ) : (
+          <Text style={styles.text}>{supplier.additionalInfo || "Хоосон"}</Text>
+        )}
+      </View>
+
       <View style={styles.financeSection}>
         <Text style={styles.sectionTitle}>Тооцоо:</Text>
         <Text style={styles.financeText}>
-          Нийт авсан гутал:{"    "}
+          Нийт авсан гутал:
           {editMode ? (
             <TextInput
               style={styles.input}
@@ -179,11 +225,11 @@ const SupplierDetailScreen = ({ route }) => {
               keyboardType="numeric"
             />
           ) : (
-            supplier.totalShoes || 0
+            ` ${supplier.totalShoes || 0}`
           )}
         </Text>
         <Text style={styles.financeText}>
-          Үлдэгдэл төлбөр:{"    "}
+          Үлдэгдэл төлбөр:
           {editMode ? (
             <TextInput
               style={styles.input}
@@ -197,18 +243,17 @@ const SupplierDetailScreen = ({ route }) => {
               keyboardType="numeric"
             />
           ) : (
-            supplier.balance || 0
+            ` ${supplier.balance || 0}`
           )}
         </Text>
       </View>
 
-      {/* Save or Edit Button */}
       <TouchableOpacity
         style={styles.editButton}
         onPress={editMode ? handleSave : () => setEditMode(true)}
       >
         <Text style={styles.editButtonText}>
-          {editMode ? "Хадгалах" : "Мэдээлэл засах"}
+          {editMode ? "Хадгалах" : "Засах"}
         </Text>
       </TouchableOpacity>
     </ScrollView>
@@ -217,89 +262,99 @@ const SupplierDetailScreen = ({ route }) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    backgroundColor: "#FFF",
+    padding: width * 0.04,
+    backgroundColor: "#F5F5F5",
     flexGrow: 1,
   },
   profileSection: {
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-around",
+    marginBottom: width * 0.05,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginRight: 16,
+    width: width * 0.4,
+    height: width * 0.4,
+    borderRadius: width * 0.2,
+    marginBottom: width * 0.03,
   },
   imageButtons: {
     flexDirection: "row",
-    marginTop: 10,
+    justifyContent: "space-between",
   },
   cameraButton: {
-    marginRight: 10,
-    padding: 10,
+    padding: width * 0.02,
     backgroundColor: "#03A9F4",
-    borderRadius: 5,
+    borderRadius: 8,
+    marginHorizontal: width * 0.02,
   },
   libraryButton: {
-    padding: 10,
+    padding: width * 0.02,
     backgroundColor: "#4CAF50",
-    borderRadius: 5,
+    borderRadius: 8,
+    marginHorizontal: width * 0.02,
+  },
+  imageButtonText: {
+    color: "#FFF",
+    fontSize: width * 0.035,
   },
   profileInfo: {
-    flexDirection: "column",
+    marginBottom: width * 0.05,
   },
   name: {
-    fontSize: 28,
+    fontSize: width * 0.07,
     fontWeight: "bold",
-    marginVertical: 12,
+    marginBottom: width * 0.03,
+    textAlign: "center",
   },
-  phone: {
-    fontSize: 17,
-    color: "#666",
-    marginBottom: 4,
+  label: {
+    fontSize: width * 0.04,
+    color: "#333",
+    marginTop: width * 0.02,
   },
-  additionalInfo: {
-    fontSize: 17,
+  text: {
+    fontSize: width * 0.045,
     color: "#666",
   },
   input: {
-    fontSize: 16,
+    fontSize: width * 0.045,
     color: "#333",
     borderBottomWidth: 1,
     borderColor: "#ddd",
-    marginBottom: 10,
+    marginBottom: width * 0.03,
+    paddingVertical: width * 0.01,
   },
-  divider: {
-    height: 1,
-    backgroundColor: "#ddd",
-    marginVertical: 20,
+  notesInput: {
+    height: width * 0.2,
+    textAlignVertical: "top",
   },
   financeSection: {
-    marginBottom: 20,
+    marginBottom: width * 0.05,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: width * 0.05,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: width * 0.03,
   },
   financeText: {
-    fontSize: 17,
+    fontSize: width * 0.045,
     color: "#333",
-    marginBottom: 8,
+    marginBottom: width * 0.03,
   },
   editButton: {
     backgroundColor: "#03A9F4",
-    padding: 12,
+    paddingVertical: width * 0.04,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: width * 0.05,
   },
   editButtonText: {
     color: "#FFF",
-    fontSize: 16,
+    fontSize: width * 0.045,
     fontWeight: "bold",
+  },
+  loadingText: {
+    fontSize: width * 0.045,
+    textAlign: "center",
+    marginTop: width * 0.1,
   },
 });
 

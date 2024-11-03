@@ -12,7 +12,8 @@ import {
   Modal,
   FlatList,
 } from "react-native";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as ImagePicker from "expo-image-picker";
 
 const AddShoeExpenseScreen = ({ route, navigation }) => {
@@ -87,6 +88,17 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
     fetchCodes();
   }, []);
 
+  const uploadImageToStorage = async (uri) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const storage = getStorage();
+    const storageRef = ref(storage, `images/${Date.now()}`); // Зургийн өвөрмөц нэр
+
+    await uploadBytes(storageRef, blob);
+    const downloadURL = await getDownloadURL(storageRef);
+    return downloadURL;
+  };
+
   const handleSaveShoeExpense = async () => {
     if (!supplierCode || !shoeCount || !unitPrice || !selectedImage) {
       Alert.alert("Анхаар!", "Бүх утгуудыг оруулна уу.");
@@ -94,6 +106,8 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
     }
 
     try {
+      const downloadURL = await uploadImageToStorage(selectedImage); // Зураг Firebase Storage-д хадгална
+
       const db = getFirestore();
       const totalShoeExpense = calculateTotalPrice();
 
@@ -105,7 +119,7 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
         purchasedShoesCount: parseInt(shoeCount, 10),
         paymentMade: paymentMade,
         additionalNotes: additionalNotes,
-        image: selectedImage,
+        image: downloadURL, // Зургийн URL-ыг хадгалах
         createdAt: new Date(),
         type: "shoeExpense",
         registered: false,
@@ -153,7 +167,6 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
             value={shoeCount}
             keyboardType="numeric"
             onChangeText={setShoeCount}
-            placeholder="Гутлын тоо оруулна уу"
           />
         </View>
         <Text style={styles.multiplySymbol}>x</Text>
@@ -164,7 +177,6 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
             value={unitPrice}
             keyboardType="numeric"
             onChangeText={setUnitPrice}
-            placeholder="Гутлын нэгж үнэ оруулна уу"
           />
         </View>
       </View>

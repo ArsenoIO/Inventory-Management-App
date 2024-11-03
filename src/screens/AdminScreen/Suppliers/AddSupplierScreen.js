@@ -8,23 +8,18 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  Dimensions,
 } from "react-native";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  setDoc,
-  doc,
-} from "firebase/firestore";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as ImagePicker from "expo-image-picker";
 
+const { width } = Dimensions.get("window");
+
 const AddSupplierScreen = ({ navigation }) => {
-  const [code, setCode] = useState(""); // Code input
+  const [code, setCode] = useState("");
   const [nameDetail, setNameDetail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [additionalInfo, setAdditionalInfo] = useState("");
-  const [totalShoes, setTotalShoes] = useState("0");
-  const [balance, setBalance] = useState("0");
   const [imageUrl, setImageUrl] = useState(null);
 
   // Image picker function
@@ -39,46 +34,76 @@ const AddSupplierScreen = ({ navigation }) => {
     }
   };
 
+  const uploadImageToStorage = async (uri) => {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const storage = getStorage();
+      const storageRef = ref(storage, `names/${code}-${Date.now()}`); // Unique filename
+
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      return downloadURL;
+    } catch (error) {
+      console.error("Зургийг байршуулж чадсангүй:", error);
+      Alert.alert("Алдаа", "Зургийг хадгалахад алдаа гарлаа.");
+      return null;
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!code || !nameDetail || !phoneNumber) {
-      Alert.alert(
-        "Error",
-        "Код, Нийлүүлэгчийн нэр болон утасны дугаар заавал байх ёстой."
-      );
+    if (!code || !nameDetail) {
+      Alert.alert("Алдаа", "Код болон нэр заавал байх ёстой.");
       return;
     }
 
     try {
+      let imageURL = null;
+      if (imageUrl) {
+        imageURL = await uploadImageToStorage(imageUrl); // Зургийг хадгална
+        if (!imageURL) return; // Хэрэв зураг байршуулж чадвал үргэлжлүүлнэ
+      }
+
       const db = getFirestore();
-      const supplierRef = doc(db, "names", code); // Using the code as the document ID
+      const supplierRef = doc(db, "names", code);
       await setDoc(supplierRef, {
         nameDetail,
         phoneNumber,
-        additionalInfo,
-        totalShoes: parseInt(totalShoes, 10),
-        balance: parseFloat(balance),
-        imageUrl,
+        additionalInfo: "",
+        totalShoes: 0,
+        balance: 0,
+        imageUrl: imageURL, // Зураг URL-ыг хадгалах
       });
 
-      Alert.alert("Success", "Нийлүүлэгчийн мэдээлэл амжилттай нэмэгдлээ.");
-      navigation.goBack(); // Go back to SuppliersInfoScreen
+      Alert.alert("Амжилттай", "Нийлүүлэгчийн мэдээлэл амжилттай нэмэгдлээ.");
+      navigation.goBack();
     } catch (error) {
-      Alert.alert("Error", "Мэдээлэл нэмэхэд алдаа гарлаа.");
+      Alert.alert("Алдаа", "Мэдээлэл нэмэхэд алдаа гарлаа.");
+      console.error("Firestore-д бичихэд алдаа гарлаа:", error);
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.label}>Код (3-н үсэгтэй)</Text>
+      {/* Image Picker at the top */}
+      <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.imagePreview} />
+        ) : (
+          <Text style={styles.imagePickerText}>Зураг сонгох</Text>
+        )}
+      </TouchableOpacity>
+
+      <Text style={styles.label}>Товчилсон Код (3-н үсэгтэй)</Text>
       <TextInput
         style={styles.input}
         value={code}
         onChangeText={setCode}
         maxLength={3}
-        autoCapitalize="characters" // Automatically capitalize input
+        autoCapitalize="characters"
       />
 
-      <Text style={styles.label}>Нийлүүлэгчийн нэр</Text>
+      <Text style={styles.label}>Нэр</Text>
       <TextInput
         style={styles.input}
         value={nameDetail}
@@ -93,36 +118,6 @@ const AddSupplierScreen = ({ navigation }) => {
         keyboardType="phone-pad"
       />
 
-      <Text style={styles.label}>Нэмэлт мэдээлэл</Text>
-      <TextInput
-        style={styles.input}
-        value={additionalInfo}
-        onChangeText={setAdditionalInfo}
-      />
-
-      <Text style={styles.label}>Нийт авсан гутал</Text>
-      <TextInput
-        style={styles.input}
-        value={totalShoes}
-        onChangeText={setTotalShoes}
-        keyboardType="numeric"
-      />
-
-      <Text style={styles.label}>Үлдэгдэл төлбөр</Text>
-      <TextInput
-        style={styles.input}
-        value={balance}
-        onChangeText={setBalance}
-        keyboardType="numeric"
-      />
-
-      <TouchableOpacity onPress={pickImage} style={styles.imageButton}>
-        <Text style={styles.imageButtonText}>
-          Зураг сонгох
-          <Image source={{ uri: imageUrl }} style={styles.image} />
-        </Text>
-      </TouchableOpacity>
-
       <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
         <Text style={styles.submitButtonText}>Хадгалах</Text>
       </TouchableOpacity>
@@ -132,40 +127,49 @@ const AddSupplierScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    backgroundColor: "#FFF",
+    padding: width * 0.05,
+    backgroundColor: "#FAFAFA",
+  },
+  imagePicker: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#E0E0E0",
+    padding: width * 0.05,
+    borderRadius: 8,
+    marginBottom: width * 0.05,
+  },
+  imagePickerText: {
+    fontSize: width * 0.04,
+    color: "#555",
+  },
+  imagePreview: {
+    width: width * 0.6,
+    height: width * 0.6,
+    borderRadius: 8,
   },
   label: {
-    fontSize: 16,
-    marginBottom: 8,
+    fontSize: width * 0.04,
+    marginBottom: width * 0.02,
+    color: "#333",
   },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 16,
-  },
-  imageButton: {
-    backgroundColor: "#03A9F4",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  imageButtonText: {
-    color: "#FFF",
-    fontWeight: "bold",
+    padding: width * 0.03,
+    borderRadius: 8,
+    marginBottom: width * 0.04,
+    backgroundColor: "#FFF",
+    fontSize: width * 0.04,
   },
   submitButton: {
     backgroundColor: "#4CAF50",
-    padding: 15,
-    borderRadius: 5,
+    padding: width * 0.04,
+    borderRadius: 8,
     alignItems: "center",
   },
   submitButtonText: {
     color: "#FFF",
-    fontSize: 18,
+    fontSize: width * 0.045,
     fontWeight: "bold",
   },
 });

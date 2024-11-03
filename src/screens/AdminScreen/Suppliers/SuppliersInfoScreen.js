@@ -1,89 +1,152 @@
 import React, { useEffect, useState } from "react";
 import {
-  ScrollView,
   View,
+  Text,
+  Image,
+  FlatList,
   StyleSheet,
   TouchableOpacity,
-  Text,
+  Dimensions,
 } from "react-native";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
-import { useNavigation } from "@react-navigation/native";
+import { AntDesign } from "@expo/vector-icons"; // Add this for the icon
 
-import ProfileButton from "../../../components/ProfileButton";
-import useUserData from "../../../hooks/useUserData";
+const { width } = Dimensions.get("window");
 
-const SuppliersInfoScreen = () => {
+const SupplierListScreen = ({ navigation }) => {
   const [suppliers, setSuppliers] = useState([]);
-  const { userData, loading, error } = useUserData();
-
-  const navigation = useNavigation();
 
   useEffect(() => {
+    const fetchSuppliers = async () => {
+      const db = getFirestore();
+      const suppliersCollection = collection(db, "names");
+      const supplierSnapshot = await getDocs(suppliersCollection);
+
+      const supplierList = supplierSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setSuppliers(supplierList);
+    };
+
     fetchSuppliers();
-  }, [userData, loading]);
+  }, []);
 
-  const fetchSuppliers = async () => {
-    const db = getFirestore();
-    const suppliersCollection = collection(db, "names");
-    const supplierSnapshot = await getDocs(suppliersCollection);
-
-    const supplierList = supplierSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      nameDetail: doc.data().nameDetail,
-    }));
-
-    setSuppliers(supplierList);
-  };
+  const renderSupplierItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() =>
+        navigation.navigate("SupplierDetailScreen", { supplierId: item.id })
+      }
+    >
+      <View style={styles.columnLeft}>
+        {item.imageUrl ? (
+          <Image source={{ uri: item.imageUrl }} style={styles.image} />
+        ) : (
+          <View style={styles.placeholder}>
+            <Text style={styles.placeholderText}>No Image</Text>
+          </View>
+        )}
+        <Text style={styles.codeText}>{item.id}</Text>
+      </View>
+      <View style={styles.columnRight}>
+        <Text style={styles.nameText}>{item.nameDetail}</Text>
+        <Text style={styles.detailText}>Гутал: {item.totalShoes}</Text>
+        <Text style={styles.detailText}>Үлдэгдэл: {item.balance}</Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.container}>
+      <FlatList
+        data={suppliers}
+        renderItem={renderSupplierItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+      />
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => navigation.navigate("AddSupplierScreen")}
       >
-        <Text style={styles.addButtonText}>Нийлүүлэгч нэмэх</Text>
+        <AntDesign name="plus" size={24} color="#FFF" />
       </TouchableOpacity>
-      {suppliers.map((supplier) => (
-        <View key={supplier.id} style={styles.buttonContainer}>
-          <ProfileButton
-            initials={supplier.id}
-            name={supplier.nameDetail}
-            shoes={0} // Placeholder data for now
-            balance={0} // Placeholder data for now
-            loan={0} // Placeholder data for now
-            onPress={() =>
-              navigation.navigate("SupplierDetailScreen", {
-                supplierId: supplier.id,
-              })
-            }
-          />
-        </View>
-      ))}
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    flexGrow: 1,
+    flex: 1,
   },
-  buttonContainer: {
-    width: "100%",
-    marginBottom: 10,
+  listContainer: {
+    padding: width * 0.03,
+  },
+  card: {
+    flexDirection: "row",
+    backgroundColor: "#FFF",
+    borderRadius: width * 0.02,
+    padding: width * 0.04,
+    marginBottom: width * 0.03,
+    elevation: 3,
+  },
+  columnLeft: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: width * 0.03,
+  },
+  image: {
+    width: width * 0.2,
+    height: width * 0.2,
+    borderRadius: width * 0.1,
+    marginBottom: width * 0.02,
+  },
+  placeholder: {
+    width: width * 0.2,
+    height: width * 0.2,
+    borderRadius: width * 0.1,
+    backgroundColor: "#E0E0E0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: width * 0.02,
+  },
+  placeholderText: {
+    fontSize: width * 0.035,
+    color: "#777",
+  },
+  codeText: {
+    fontSize: width * 0.04,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  columnRight: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  nameText: {
+    fontSize: width * 0.045,
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: width * 0.01,
+  },
+  detailText: {
+    fontSize: width * 0.04,
+    color: "#555",
   },
   addButton: {
+    position: "absolute",
+    right: width * 0.1,
+    bottom: width * 0.1,
     backgroundColor: "#03A9F4",
-    padding: 12,
-    borderRadius: 8,
+    borderRadius: width * 0.035,
+    paddingVertical: width * 0.03,
+    paddingHorizontal: width * 0.04,
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
-  },
-  addButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "bold",
+    justifyContent: "center",
+    elevation: 3,
   },
 });
 
-export default SuppliersInfoScreen;
+export default SupplierListScreen;

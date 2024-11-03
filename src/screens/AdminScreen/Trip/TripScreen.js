@@ -66,7 +66,7 @@ const TripScreen = () => {
       <View style={styles.datePickers}>
         <TouchableOpacity onPress={() => setShowStartPicker(true)}>
           <Text style={styles.dateText}>
-            Эхлэх огноо: {startDate.toLocaleDateString()}
+            Эхлэх: {startDate.toLocaleDateString()}
           </Text>
         </TouchableOpacity>
         {showStartPicker && (
@@ -82,7 +82,7 @@ const TripScreen = () => {
         )}
         <TouchableOpacity onPress={() => setShowEndPicker(true)}>
           <Text style={styles.dateText}>
-            Дуусах огноо: {endDate.toLocaleDateString()}
+            Дуусах: {endDate.toLocaleDateString()}
           </Text>
         </TouchableOpacity>
         {showEndPicker && (
@@ -109,9 +109,11 @@ const TripScreen = () => {
               navigation.navigate("TripDetailScreen", { tripId: item.id })
             }
           >
-            <Text style={styles.tripName}>{item.tripName}</Text>
             <Text style={styles.dateDetail}>
-              Огноо: {new Date(item.tripDate).toLocaleDateString()}
+              Огноо:{" "}
+              <Text style={styles.date}>
+                {new Date(item.tripDate).toLocaleDateString()}
+              </Text>
             </Text>
           </TouchableOpacity>
         )}
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   dateText: {
-    fontSize: 16,
+    fontSize: width * 0.03,
     fontWeight: "500",
   },
   tripItem: {
@@ -165,6 +167,11 @@ const styles = StyleSheet.create({
   dateDetail: {
     fontSize: 20,
     color: "#666",
+  },
+  date: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#006A67",
   },
   addButton: {
     position: "absolute",
