@@ -12,13 +12,12 @@ import {
 } from "react-native";
 import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { launchCameraAsync } from "expo-image-picker";
 
 const { width } = Dimensions.get("window");
 
-const SupplierDetailScreen = ({ route }) => {
+const SupplierDetailScreen = ({ route, navigation }) => {
   const { supplierId } = route.params;
   const [supplier, setSupplier] = useState(null);
   const [editMode, setEditMode] = useState(false);
@@ -48,6 +47,10 @@ const SupplierDetailScreen = ({ route }) => {
     fetchSupplier();
   }, [supplierId]);
 
+  const handleHistoryNavigation = () => {
+    navigation.navigate("SupplierHistoryScreen", { supplierId });
+  };
+
   const uploadImageToStorage = async (uri) => {
     const response = await fetch(uri);
     const blob = await response.blob();
@@ -65,7 +68,6 @@ const SupplierDetailScreen = ({ route }) => {
       const db = getFirestore();
       const supplierRef = doc(db, "names", supplierId);
 
-      // Баримт байгаа эсэхийг шалгах
       const docSnap = await getDoc(supplierRef);
       if (!docSnap.exists()) {
         Alert.alert(
@@ -77,22 +79,19 @@ const SupplierDetailScreen = ({ route }) => {
 
       let newImageUrl = updatedSupplier.imageUrl;
 
-      // Шинээр зураг нэмэх
       if (selectedImage) {
         newImageUrl = await uploadImageToStorage(selectedImage);
       }
 
-      // State-д шинэ зураг оруулах
       const newSupplierData = {
         ...updatedSupplier,
         imageUrl: newImageUrl,
       };
 
-      // Баримт шинэчлэх
       await updateDoc(supplierRef, newSupplierData);
-      setSupplier(newSupplierData); // Шинэчлэгдсэн өгөгдлийг state-д оруулах
+      setSupplier(newSupplierData);
       setUpdatedSupplier(newSupplierData);
-      setSelectedImage(null); // Reset selected image
+      setSelectedImage(null);
 
       Alert.alert("Амжилттай");
       setEditMode(false);
@@ -129,9 +128,11 @@ const SupplierDetailScreen = ({ route }) => {
       setSelectedImage(result.assets[0].uri);
     }
   };
+
   if (!supplier) {
     return <Text style={styles.loadingText}>Татаж байна...</Text>;
   }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.profileSection}>
@@ -209,7 +210,12 @@ const SupplierDetailScreen = ({ route }) => {
       </View>
 
       <View style={styles.financeSection}>
-        <Text style={styles.sectionTitle}>Тооцоо:</Text>
+        <View style={styles.financeHeader}>
+          <Text style={styles.sectionTitle}>Тооцоо:</Text>
+          <TouchableOpacity onPress={handleHistoryNavigation}>
+            <MaterialIcons name="history" size={24} color="#333" />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.financeText}>
           Нийт авсан гутал:
           {editMode ? (
@@ -328,6 +334,11 @@ const styles = StyleSheet.create({
   },
   financeSection: {
     marginBottom: width * 0.05,
+  },
+  financeHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   sectionTitle: {
     fontSize: width * 0.05,

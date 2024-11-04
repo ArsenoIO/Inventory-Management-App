@@ -37,73 +37,78 @@ const TripDetailScreen = ({ route, navigation }) => {
   const [imageModalVisible, setImageModalVisible] = useState(false); // For image modal
   const [selectedImage, setSelectedImage] = useState(null); // Track selected image
 
+  const fetchTripDetails = async () => {
+    const db = getFirestore();
+    const tripRef = doc(db, "trips", tripId);
+    const tripSnap = await getDoc(tripRef);
+
+    if (tripSnap.exists()) {
+      setTrip(tripSnap.data());
+      fetchOtherExpenses();
+      fetchShoeExpenses();
+    } else {
+      Alert.alert("Алдаа", "Аяллын дэлгэрэнгүй мэдээлэл олдсонгүй.");
+      navigation.goBack();
+    }
+  };
+
+  const fetchShoeExpenses = async () => {
+    const db = getFirestore();
+    const shoeExpenseQuery = query(
+      collection(db, "shoeExpense"),
+      where("tripId", "==", tripId),
+      where("type", "==", "shoeExpense")
+    );
+
+    const shoeExpenseSnapshot = await getDocs(shoeExpenseQuery);
+    const shoeExpenseList = shoeExpenseSnapshot.docs.map((doc) => ({
+      id: doc.id, // Баримтын ID-г оруулах
+      ...doc.data(),
+    }));
+
+    setShoeExpenses(shoeExpenseList);
+    const totalShoeCost = shoeExpenseList.reduce(
+      (acc, expense) => acc + parseFloat(expense.totalCost || 0),
+      0
+    );
+    setTotalShoeExpenses(totalShoeCost);
+  };
+
+  const fetchOtherExpenses = async () => {
+    const db = getFirestore();
+    const expenseQuery = query(
+      collection(db, "otherExpense"),
+      where("tripID", "==", tripId),
+      where("type", "==", "otherExpense")
+    );
+
+    const expenseSnapshot = await getDocs(expenseQuery);
+    const expenseList = expenseSnapshot.docs.map((doc) => ({
+      id: doc.id, // Баримтын ID-г оруулах
+      ...doc.data(),
+    }));
+    setExpenses(expenseList);
+    const totalExpenses = expenseList.reduce(
+      (acc, expense) => acc + expense.amount,
+      0
+    );
+    setTotalOtherExpenses(totalExpenses);
+    setLoading(false);
+  };
+
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity onPress={handleDeleteTrip}>
-          <MaterialIcons
-            name="delete"
-            size={24}
-            color="red"
+        <TouchableOpacity onPress={() => setModalVisible(true)}>
+          <AntDesign
+            name="pluscircle"
+            size={30}
+            color="#03A9F4"
             style={{ marginRight: 16 }}
           />
         </TouchableOpacity>
       ),
     });
-
-    const fetchTripDetails = async () => {
-      const db = getFirestore();
-      const tripRef = doc(db, "trips", tripId);
-      const tripSnap = await getDoc(tripRef);
-
-      if (tripSnap.exists()) {
-        setTrip(tripSnap.data());
-        fetchOtherExpenses();
-        fetchShoeExpenses();
-      } else {
-        Alert.alert("Алдаа", "Аяллын дэлгэрэнгүй мэдээлэл олдсонгүй.");
-        navigation.goBack();
-      }
-    };
-
-    const fetchShoeExpenses = async () => {
-      const db = getFirestore();
-      const shoeExpenseQuery = query(
-        collection(db, "shoeExpense"),
-        where("tripId", "==", tripId),
-        where("type", "==", "shoeExpense")
-      );
-
-      const shoeExpenseSnapshot = await getDocs(shoeExpenseQuery);
-      const shoeExpenseList = shoeExpenseSnapshot.docs.map((doc) => doc.data());
-
-      setShoeExpenses(shoeExpenseList);
-      const totalShoeCost = shoeExpenseList.reduce(
-        (acc, expense) => acc + parseFloat(expense.totalCost || 0),
-        0
-      );
-      setTotalShoeExpenses(totalShoeCost);
-    };
-
-    const fetchOtherExpenses = async () => {
-      const db = getFirestore();
-      const expenseQuery = query(
-        collection(db, "otherExpense"),
-        where("tripID", "==", tripId),
-        where("type", "==", "otherExpense")
-      );
-
-      const expenseSnapshot = await getDocs(expenseQuery);
-      const expenseList = expenseSnapshot.docs.map((doc) => doc.data());
-
-      setExpenses(expenseList);
-      const totalExpenses = expenseList.reduce(
-        (acc, expense) => acc + expense.amount,
-        0
-      );
-      setTotalOtherExpenses(totalExpenses);
-      setLoading(false);
-    };
 
     fetchTripDetails();
   }, [tripId, navigation]);
@@ -139,9 +144,6 @@ const TripDetailScreen = ({ route, navigation }) => {
               const tripRef = doc(db, "trips", tripId);
               await deleteDoc(tripRef);
 
-              // Холбогдох зардлуудыг устгах функц дуудах
-              await handleDeleteExpensesByTripId(tripId);
-
               Alert.alert(
                 "Амжилттай!",
                 "Аялал болон холбогдох зардлууд устгагдлаа."
@@ -170,16 +172,35 @@ const TripDetailScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleDeleteSingleExpense = async (expenseId, collectionName) => {
-    try {
-      const db = getFirestore();
-      const expenseRef = doc(db, collectionName, expenseId);
-      await deleteDoc(expenseRef);
-      Alert.alert("Амжилттай!", "Зардал амжилттай устгагдлаа.");
-    } catch (error) {
-      console.error("Устгалтын алдаа гарлаа:", error);
-      Alert.alert("Алдаа", "Зардлыг устгахад алдаа гарлаа.");
-    }
+  const handleDeleteSingleExpense = (expenseId, collectionName) => {
+    Alert.alert(
+      "Баталгаажуулалт",
+      "Та энэ зардлыг устгахдаа итгэлтэй байна уу?",
+      [
+        {
+          text: "Үгүй",
+          style: "cancel",
+        },
+        {
+          text: "Тийм",
+          onPress: async () => {
+            try {
+              const db = getFirestore();
+              const expenseRef = doc(db, collectionName, expenseId);
+              await deleteDoc(expenseRef);
+              Alert.alert("Амжилттай!", "Зардал амжилттай устгагдлаа.");
+
+              fetchShoeExpenses();
+              fetchOtherExpenses();
+            } catch (error) {
+              console.error("Устгалтын алдаа гарлаа:", error);
+              Alert.alert("Алдаа", "Зардлыг устгахад алдаа гарлаа.");
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   if (loading) {
@@ -188,13 +209,6 @@ const TripDetailScreen = ({ route, navigation }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <AntDesign name="plus" size={30} color="#FFF" />
-      </TouchableOpacity>
-
       <View style={styles.detailSection}>
         <Text style={styles.date}>
           {new Date(trip.tripDate).toLocaleString()}
@@ -243,16 +257,14 @@ const TripDetailScreen = ({ route, navigation }) => {
               </TouchableOpacity>
             )}
 
-            <Text style={styles.expenseDetail}>
-              Төлөгдсөн эсэх: {expense.paymentMade}
-            </Text>
+            <Text style={styles.payment}>{expense.paymentMethod}</Text>
 
             <TouchableOpacity
               onPress={() =>
                 handleDeleteSingleExpense(expense.id, "shoeExpense")
               }
             >
-              <Text>Устгах</Text>
+              <Text style={styles.deleteButtonText}>Устгах</Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -267,8 +279,9 @@ const TripDetailScreen = ({ route, navigation }) => {
             </Text>
 
             <TouchableOpacity
-              onPress={() => handleDeleteExpensesByTripId(expense.tripID)}
-              style={styles.deleteButton}
+              onPress={() =>
+                handleDeleteSingleExpense(expense.id, "otherExpense")
+              }
             >
               <Text style={styles.deleteButtonText}>Устгах</Text>
             </TouchableOpacity>
@@ -278,9 +291,9 @@ const TripDetailScreen = ({ route, navigation }) => {
 
       <TouchableOpacity
         style={styles.completeButton}
-        onPress={handleCompleteTrip}
+        onPress={handleDeleteTrip}
       >
-        <Text style={styles.completeButtonText}>Аяллыг дуусгах</Text>
+        <Text style={styles.completeButtonText}>Аяллыг устгах</Text>
       </TouchableOpacity>
 
       <Modal visible={modalVisible} transparent={true} animationType="slide">
@@ -336,39 +349,40 @@ const styles = StyleSheet.create({
   container: {
     padding: width * 0.04,
     flexGrow: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: "#f2f2f2",
   },
   detailSection: {
     marginBottom: height * 0.02,
     padding: width * 0.04,
-    backgroundColor: "#F9FAFB",
-    borderRadius: width * 0.02,
-    elevation: 2,
+    backgroundColor: "#ffffff",
+    borderRadius: width * 0.03,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   date: {
     fontSize: width * 0.03,
     alignSelf: "flex-end",
     marginBottom: height * 0.015,
+    color: "#555",
   },
   balanceLabel: {
     fontSize: width * 0.04,
     marginBottom: height * 0.005,
     fontWeight: "bold",
-    alignSelf: "flex-start",
+    color: "#333",
   },
   balanceText: {
     fontSize: width * 0.045,
     color: "#00C853",
-    marginBottom: height * 0.005,
     fontWeight: "bold",
-    alignSelf: "flex-end",
   },
   leftBalanceText: {
     fontSize: width * 0.045,
     color: "#FF6347",
-    marginBottom: height * 0.005,
     fontWeight: "bold",
-    alignSelf: "flex-start",
   },
   sectionTitle: {
     fontSize: width * 0.04,
@@ -383,22 +397,30 @@ const styles = StyleSheet.create({
     marginBottom: height * 0.005,
   },
   shoeExpenseCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#ffffff",
     padding: width * 0.04,
-    borderRadius: width * 0.02,
-    marginBottom: height * 0.01,
-    elevation: 1,
+    borderRadius: width * 0.03,
+    marginBottom: height * 0.02,
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: "#03A9F4",
   },
   otherExpenseCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#ffffff",
     padding: width * 0.03,
-    borderRadius: width * 0.02,
-    marginBottom: height * 0.01,
-    elevation: 1,
+    borderRadius: width * 0.03,
+    marginBottom: height * 0.02,
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: "#FF6347",
   },
   expenseDetail: {
     fontSize: width * 0.04,
     marginBottom: height * 0.005,
+  },
+  payment: {
+    color: "#3C552D",
+    fontWeight: "bold",
   },
   image: {
     width: width * 0.3,
@@ -416,22 +438,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  addButton: {
-    position: "absolute",
-    right: width * 0.1,
-    bottom: height * 0.1,
-    backgroundColor: "#03A9F4",
-    width: width * 0.15,
-    height: width * 0.15,
-    borderRadius: width * 0.075,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 4,
-  },
   completeButton: {
     marginTop: height * 0.12,
     padding: width * 0.03,
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#FF3B30",
     borderRadius: width * 0.02,
     alignItems: "center",
   },
@@ -484,17 +494,11 @@ const styles = StyleSheet.create({
     fontSize: width * 0.045,
     fontWeight: "bold",
   },
-  deleteButton: {
-    backgroundColor: "#FF6347",
-    padding: width * 0.02,
-    borderRadius: width * 0.02,
-    marginTop: height * 0.01,
-    alignItems: "center",
-  },
   deleteButtonText: {
-    color: "#FFF",
+    color: "#FF3B30",
     fontSize: width * 0.035,
     fontWeight: "bold",
+    alignSelf: "flex-end",
   },
 });
 

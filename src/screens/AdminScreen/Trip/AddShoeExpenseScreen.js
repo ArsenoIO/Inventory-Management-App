@@ -5,13 +5,13 @@ import {
   TextInput,
   StyleSheet,
   Alert,
-  Switch,
   TouchableOpacity,
   Image,
   ScrollView,
   Modal,
   FlatList,
 } from "react-native";
+import { RadioButton } from "react-native-paper";
 import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as ImagePicker from "expo-image-picker";
@@ -21,12 +21,13 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
   const [supplierCode, setSupplierCode] = useState("");
   const [shoeCount, setShoeCount] = useState("");
   const [unitPrice, setUnitPrice] = useState("");
-  const [paymentMade, setPaymentMade] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("paid"); // "paid", "credit", "other"
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [nameDetail, setNameDetail] = useState("");
   const [codes, setCodes] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [otherPaymentExplanation, setOtherPaymentExplanation] = useState("");
 
   const calculateTotalPrice = () => {
     if (shoeCount && unitPrice) {
@@ -35,7 +36,6 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
     return 0;
   };
 
-  // Calculate store price
   const calculateStorePrice = () => {
     if (unitPrice) {
       return parseFloat(unitPrice) * 36 + 180000;
@@ -71,7 +71,6 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
     }
   };
 
-  // Fetch supplier codes from Firestore
   useEffect(() => {
     const fetchCodes = async () => {
       const db = getFirestore();
@@ -92,7 +91,7 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
     const response = await fetch(uri);
     const blob = await response.blob();
     const storage = getStorage();
-    const storageRef = ref(storage, `images/${Date.now()}`); // Зургийн өвөрмөц нэр
+    const storageRef = ref(storage, `images/${Date.now()}`);
 
     await uploadBytes(storageRef, blob);
     const downloadURL = await getDownloadURL(storageRef);
@@ -106,7 +105,7 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
     }
 
     try {
-      const downloadURL = await uploadImageToStorage(selectedImage); // Зураг Firebase Storage-д хадгална
+      const downloadURL = await uploadImageToStorage(selectedImage);
 
       const db = getFirestore();
       const totalShoeExpense = calculateTotalPrice();
@@ -117,9 +116,10 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
         shoeExpense: parseInt(unitPrice, 10),
         totalCost: totalShoeExpense,
         purchasedShoesCount: parseInt(shoeCount, 10),
-        paymentMade: paymentMade,
-        additionalNotes: additionalNotes,
-        image: downloadURL, // Зургийн URL-ыг хадгалах
+        paymentMethod: paymentMethod,
+        additionalNotes:
+          paymentMethod === "other" ? otherPaymentExplanation : additionalNotes,
+        image: downloadURL,
         createdAt: new Date(),
         type: "shoeExpense",
         registered: false,
@@ -188,19 +188,41 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
         Дэлгүүрт зарагдах үнэ: {calculateStorePrice()}₮
       </Text>
 
-      <View style={styles.switchContainer}>
-        <Text>Төлбөр төлөгдсөн:</Text>
-        <Switch value={paymentMade} onValueChange={setPaymentMade} />
+      <Text style={styles.label}>Төлөлтийн төрөл:</Text>
+      <View style={styles.radioContainer}>
+        <RadioButton.Group
+          onValueChange={(newValue) => setPaymentMethod(newValue)}
+          value={paymentMethod}
+        >
+          <View style={styles.radioRow}>
+            <View style={styles.radioItem}>
+              <RadioButton value="paid" />
+              <Text>Төлөгдсөн</Text>
+            </View>
+            <View style={styles.radioItem}>
+              <RadioButton value="credit" />
+              <Text>Зээл</Text>
+            </View>
+            <View style={styles.radioItem}>
+              <RadioButton value="other" />
+              <Text>Бусад</Text>
+            </View>
+          </View>
+        </RadioButton.Group>
       </View>
 
-      <Text style={styles.label}>Нэмэлт тэмдэглэл:</Text>
-      <TextInput
-        style={[styles.input, styles.notesInput]}
-        value={additionalNotes}
-        onChangeText={setAdditionalNotes}
-        placeholder="Нэмэлт мэдээлэл оруулна уу"
-        multiline
-      />
+      {paymentMethod === "other" && (
+        <View>
+          <Text style={styles.label}>Бусад тайлбар:</Text>
+          <TextInput
+            style={styles.input}
+            value={otherPaymentExplanation}
+            onChangeText={setOtherPaymentExplanation}
+            placeholder="Тайлбар оруулна уу"
+            multiline
+          />
+        </View>
+      )}
 
       <View style={styles.imagePickerContainer}>
         <TouchableOpacity style={styles.imagePicker} onPress={openImagePicker}>
@@ -278,7 +300,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
     marginBottom: 8,
     color: "#333",
@@ -381,6 +403,18 @@ const styles = StyleSheet.create({
   modalCloseButtonText: {
     color: "#FFF",
     fontSize: 16,
+  },
+  radioContainer: {
+    marginBottom: 16,
+  },
+  radioRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  radioItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 10,
   },
 });
 

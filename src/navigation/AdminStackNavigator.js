@@ -29,6 +29,8 @@ import AddTripScreen from "../screens/AdminScreen/Trip/AddTripScreen";
 import AddShoeExpenseScreen from "../screens/AdminScreen/Trip/AddShoeExpenseScreen";
 import AddOtherExpenseScreen from "../screens/AdminScreen/Trip/AddOtherExpenseScreen";
 
+import SupplierHistoryScreen from "../screens/AdminScreen/Suppliers/SupplierHistoryScreen";
+
 const Stack = createStackNavigator();
 
 const AdminStackNavigator = ({ navigation }) => {
@@ -227,6 +229,23 @@ const AdminStackNavigator = ({ navigation }) => {
         component={AddSupplierScreen}
         options={{
           title: "Нийлүүлэгч бүртгэх",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
+      <Stack.Screen
+        name="SupplierHistoryScreen"
+        component={SupplierHistoryScreen}
+        options={{
+          title: "Дэлгэрэнгүй",
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
               <FontAwesome
