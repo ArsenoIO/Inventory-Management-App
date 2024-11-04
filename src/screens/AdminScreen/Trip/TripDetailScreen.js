@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  RefreshControl,
   TouchableOpacity,
   Alert,
   Modal,
@@ -22,6 +23,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import AddBalanceModal from "../../../components/Modal/AddBalanceModal";
 
 const { width, height } = Dimensions.get("window");
 
@@ -34,8 +36,10 @@ const TripDetailScreen = ({ route, navigation }) => {
   const [totalOtherExpenses, setTotalOtherExpenses] = useState(0);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [addBalanceModalVisible, setAddBalanceModalVisible] = useState(false);
   const [imageModalVisible, setImageModalVisible] = useState(false); // For image modal
   const [selectedImage, setSelectedImage] = useState(null); // Track selected image
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchTripDetails = async () => {
     const db = getFirestore();
@@ -50,6 +54,12 @@ const TripDetailScreen = ({ route, navigation }) => {
       Alert.alert("Алдаа", "Аяллын дэлгэрэнгүй мэдээлэл олдсонгүй.");
       navigation.goBack();
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchTripDetails();
+    setRefreshing(false);
   };
 
   const fetchShoeExpenses = async () => {
@@ -109,7 +119,6 @@ const TripDetailScreen = ({ route, navigation }) => {
         </TouchableOpacity>
       ),
     });
-
     fetchTripDetails();
   }, [tripId, navigation]);
 
@@ -160,18 +169,6 @@ const TripDetailScreen = ({ route, navigation }) => {
     );
   };
 
-  const handleCompleteTrip = async () => {
-    try {
-      const db = getFirestore();
-      const tripRef = doc(db, "trips", tripId);
-      await updateDoc(tripRef, { tripEndDate: new Date().getTime() });
-      Alert.alert("Амжилттай!", "Аялал амжилттай дууслаа.");
-      navigation.goBack();
-    } catch (error) {
-      Alert.alert("Алдаа", "Аяллыг дуусгахад алдаа гарлаа.");
-    }
-  };
-
   const handleDeleteSingleExpense = (expenseId, collectionName) => {
     Alert.alert(
       "Баталгаажуулалт",
@@ -187,11 +184,41 @@ const TripDetailScreen = ({ route, navigation }) => {
             try {
               const db = getFirestore();
               const expenseRef = doc(db, collectionName, expenseId);
-              await deleteDoc(expenseRef);
-              Alert.alert("Амжилттай!", "Зардал амжилттай устгагдлаа.");
+              const expenseSnap = await getDoc(expenseRef);
 
-              fetchShoeExpenses();
-              fetchOtherExpenses();
+              if (expenseSnap.exists()) {
+                const expenseData = expenseSnap.data();
+                const supplierCode = expenseData.supplierCode;
+                const purchasedShoesCount = expenseData.purchasedShoesCount;
+                const totalCost = expenseData.totalCost;
+
+                // Нийлүүлэгчийн мэдээллийг татаж авах
+                const supplierRef = doc(db, "names", supplierCode);
+                const supplierSnap = await getDoc(supplierRef);
+
+                if (supplierSnap.exists()) {
+                  const supplierData = supplierSnap.data();
+                  const updatedTotalShoes =
+                    (supplierData.totalShoes || 0) - purchasedShoesCount;
+                  const updatedBalance =
+                    (supplierData.balance || 0) - totalCost;
+
+                  // Нийлүүлэгчийн мэдээллийг шинэчлэх
+                  await updateDoc(supplierRef, {
+                    totalShoes: updatedTotalShoes >= 0 ? updatedTotalShoes : 0, // Сөрөг тооноос сэргийлэх
+                    balance: updatedBalance >= 0 ? updatedBalance : 0, // Сөрөг тооноос сэргийлэх
+                  });
+                }
+
+                // Зардлыг устгах
+                await deleteDoc(expenseRef);
+                Alert.alert("Амжилттай!", "Зардал амжилттай устгагдлаа.");
+
+                fetchShoeExpenses();
+                fetchOtherExpenses();
+              } else {
+                Alert.alert("Алдаа", "Зардлын өгөгдөл олдсонгүй.");
+              }
             } catch (error) {
               console.error("Устгалтын алдаа гарлаа:", error);
               Alert.alert("Алдаа", "Зардлыг устгахад алдаа гарлаа.");
@@ -203,12 +230,63 @@ const TripDetailScreen = ({ route, navigation }) => {
     );
   };
 
+  const handleDeleteOtherExpense = async (expenseId) => {
+    Alert.alert(
+      "Баталгаажуулалт",
+      "Та энэ зардлыг устгахдаа итгэлтэй байна уу?",
+      [
+        {
+          text: "Үгүй",
+          style: "cancel",
+        },
+        {
+          text: "Тийм",
+          onPress: async () => {
+            try {
+              const db = getFirestore();
+              const expenseRef = doc(db, "otherExpense", expenseId);
+              await deleteDoc(expenseRef);
+
+              Alert.alert("Амжилттай!", "Зардал амжилттай устгагдлаа.");
+              // Өгөгдлийг дахин татах функц дуудаж байна
+              fetchOtherExpenses();
+            } catch (error) {
+              console.error("Зардлыг устгахад алдаа гарлаа:", error);
+              Alert.alert("Алдаа", "Зардлыг устгахад алдаа гарлаа.");
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  const handleAddBalance = async (amount) => {
+    try {
+      const db = getFirestore();
+      const tripRef = doc(db, "trips", tripId);
+      await updateDoc(tripRef, {
+        startingBalance: trip.startingBalance + amount,
+      });
+      Alert.alert("Амжилттай!", "Мөнгөн дүн нэмэгдлээ.");
+      fetchTripDetails(); // Refresh trip details
+    } catch (error) {
+      Alert.alert("Алдаа", "Мөнгөн дүн нэмэхэд алдаа гарлаа.");
+      console.error(error);
+    }
+  };
+
   if (loading) {
     return <Text style={styles.loadingText}>Ачааллаж байна...</Text>;
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.detailSection}>
         <Text style={styles.date}>
           {new Date(trip.tripDate).toLocaleString()}
@@ -223,6 +301,14 @@ const TripDetailScreen = ({ route, navigation }) => {
             {calculateRemainingBalance()}
           </Text>
         </Text>
+        <TouchableOpacity onPress={() => setAddBalanceModalVisible(true)}>
+          <Text style={styles.addBalance}>Мөнгөн дүн нэмэх</Text>
+        </TouchableOpacity>
+        <AddBalanceModal
+          visible={addBalanceModalVisible}
+          onClose={() => setAddBalanceModalVisible(false)}
+          onAddBalance={handleAddBalance}
+        />
       </View>
 
       <View style={styles.expenseSection}>
@@ -280,7 +366,7 @@ const TripDetailScreen = ({ route, navigation }) => {
 
             <TouchableOpacity
               onPress={() =>
-                handleDeleteSingleExpense(expense.id, "otherExpense")
+                handleDeleteOtherExpense(expense.id, "otherExpense")
               }
             >
               <Text style={styles.deleteButtonText}>Устгах</Text>
@@ -383,6 +469,11 @@ const styles = StyleSheet.create({
     fontSize: width * 0.045,
     color: "#FF6347",
     fontWeight: "bold",
+  },
+  addBalance: {
+    alignSelf: "flex-end",
+    fontStyle: "italic",
+    color: "#405D72",
   },
   sectionTitle: {
     fontSize: width * 0.04,

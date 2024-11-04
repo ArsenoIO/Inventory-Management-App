@@ -213,7 +213,7 @@ const SupplierDetailScreen = ({ route, navigation }) => {
         <View style={styles.financeHeader}>
           <Text style={styles.sectionTitle}>Тооцоо:</Text>
           <TouchableOpacity onPress={handleHistoryNavigation}>
-            <MaterialIcons name="history" size={24} color="#333" />
+            <MaterialIcons name="remove-red-eye" size={30} color="#333" />
           </TouchableOpacity>
         </View>
         <Text style={styles.financeText}>
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sectionTitle: {
-    fontSize: width * 0.05,
+    fontSize: width * 0.06,
     fontWeight: "bold",
     marginBottom: width * 0.03,
   },
@@ -349,6 +349,8 @@ const styles = StyleSheet.create({
     fontSize: width * 0.045,
     color: "#333",
     marginBottom: width * 0.03,
+
+    paddingLeft: width * 0.04,
   },
   editButton: {
     backgroundColor: "#03A9F4",

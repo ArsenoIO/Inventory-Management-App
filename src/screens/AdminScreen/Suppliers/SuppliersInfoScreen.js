@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  RefreshControl,
 } from "react-native";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { AntDesign } from "@expo/vector-icons"; // Add this for the icon
@@ -15,23 +16,30 @@ const { width } = Dimensions.get("window");
 
 const SupplierListScreen = ({ navigation }) => {
   const [suppliers, setSuppliers] = useState([]);
+  const [refreshing, setRefreshing] = useState(false); // Refreshing state
+
+  const fetchSuppliers = async () => {
+    const db = getFirestore();
+    const suppliersCollection = collection(db, "names");
+    const supplierSnapshot = await getDocs(suppliersCollection);
+
+    const supplierList = supplierSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    setSuppliers(supplierList);
+  };
 
   useEffect(() => {
-    const fetchSuppliers = async () => {
-      const db = getFirestore();
-      const suppliersCollection = collection(db, "names");
-      const supplierSnapshot = await getDocs(suppliersCollection);
-
-      const supplierList = supplierSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      setSuppliers(supplierList);
-    };
-
     fetchSuppliers();
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchSuppliers();
+    setRefreshing(false);
+  };
 
   const renderSupplierItem = ({ item }) => (
     <TouchableOpacity
@@ -65,6 +73,9 @@ const SupplierListScreen = ({ navigation }) => {
         renderItem={renderSupplierItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
       <TouchableOpacity
         style={styles.addButton}

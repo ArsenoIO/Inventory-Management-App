@@ -22,7 +22,11 @@ const { width } = Dimensions.get("window");
 
 const TripScreen = () => {
   const [trips, setTrips] = useState([]);
-  const [startDate, setStartDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 7); // Одоогийн өдрөөс 7 хоног хасах
+    return date;
+  });
   const [endDate, setEndDate] = useState(new Date());
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);

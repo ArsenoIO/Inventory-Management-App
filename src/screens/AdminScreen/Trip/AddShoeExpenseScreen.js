@@ -12,7 +12,15 @@ import {
   FlatList,
 } from "react-native";
 import { RadioButton } from "react-native-paper";
-import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  addDoc,
+  getDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as ImagePicker from "expo-image-picker";
 
@@ -109,13 +117,15 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
 
       const db = getFirestore();
       const totalShoeExpense = calculateTotalPrice();
+      const newShoeCount = parseInt(shoeCount, 10);
 
+      // Зардлыг хадгалах
       await addDoc(collection(db, "shoeExpense"), {
         tripId: tripId,
         supplierCode: supplierCode,
         shoeExpense: parseInt(unitPrice, 10),
         totalCost: totalShoeExpense,
-        purchasedShoesCount: parseInt(shoeCount, 10),
+        purchasedShoesCount: newShoeCount,
         paymentMethod: paymentMethod,
         additionalNotes:
           paymentMethod === "other" ? otherPaymentExplanation : additionalNotes,
@@ -125,8 +135,33 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
         registered: false,
       });
 
-      Alert.alert("Амжилттай!", "Гутлын зардал амжилттай нэмэгдлээ.");
-      navigation.goBack();
+      // Нийлүүлэгчийн мэдээллийг шинэчлэх
+      const supplierRef = doc(db, "names", supplierCode);
+      const supplierSnap = await getDoc(supplierRef);
+      if (supplierSnap.exists()) {
+        const supplierData = supplierSnap.data();
+        const updatedTotalShoes = (supplierData.totalShoes || 0) + newShoeCount;
+
+        let updatedBalance = supplierData.balance || 0;
+
+        // Зөвхөн "credit" эсвэл "other" төлбөрийн хэлбэртэй бол балансд нэмэгдэл хийх
+        if (paymentMethod === "credit" || paymentMethod === "other") {
+          updatedBalance += totalShoeExpense;
+        }
+
+        // Нийлүүлэгчийн баримтыг шинэчлэх
+        await updateDoc(supplierRef, {
+          totalShoes: updatedTotalShoes,
+          balance: updatedBalance,
+        });
+
+        Alert.alert("Амжилттай!", "Гутлын зардал амжилттай нэмэгдлээ.");
+
+        // navigation.goBack() оронд navigate ашиглан шинэчлэх trigger дамжуулах
+        navigation.goBack();
+      } else {
+        Alert.alert("Анхаар!", "Нийлүүлэгчийн мэдээлэл олдсонгүй.");
+      }
     } catch (error) {
       console.error("Алдаа гарлаа: ", error);
       Alert.alert("Алдаа", "Гутлын зардлыг нэмэхэд алдаа гарлаа.");

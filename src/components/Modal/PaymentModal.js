@@ -20,7 +20,7 @@ const PaymentModal = ({ visible, onClose, onSubmit, lease }) => {
   const handleSubmit = () => {
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount <= 0) {
-      alert("Please enter a valid payment amount.");
+      alert("Утга оруулна уу.");
       return;
     }
     onSubmit(amount); // Send the payment amount back to the parent
