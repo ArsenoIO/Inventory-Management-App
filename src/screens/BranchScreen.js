@@ -8,7 +8,6 @@ import {
   Dimensions,
 } from "react-native";
 import Icon from "react-native-vector-icons/Entypo";
-import { Divider } from "react-native-paper";
 import {
   getFirestore,
   collection,
@@ -17,32 +16,14 @@ import {
   where,
 } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
-import useUserData from "../hooks/useUserData"; // Import the custom hook
+import useUserData from "../hooks/useUserData";
+
+const { width, height } = Dimensions.get("window");
 
 const BranchScreen = () => {
-  const { userData, loading, error } = useUserData(); // Using the custom hook
+  const { userData, loading, error } = useUserData();
   const navigation = useNavigation();
-  const [branchData, setBranchData] = useState([]); // Бүх салбаруудыг хадгалах state
-  const { width } = Dimensions.get("window");
-
-  const fetchUnsoldShoeCount = async (branchName) => {
-    const db = getFirestore();
-    const shoesCollection = collection(db, "shoes");
-
-    try {
-      const unsoldShoesQuery = query(
-        shoesCollection,
-        where("addedBranch", "==", branchName),
-        where("isSold", "==", true) // Only unsold shoes
-      );
-
-      const unsoldShoesSnapshot = await getDocs(unsoldShoesQuery);
-      const unsoldCount = unsoldShoesSnapshot.size;
-      console.log(`Зарагдаагүй гутлын тоо (${branchName}): ${unsoldCount}`);
-    } catch (error) {
-      console.error("Зарагдаагүй гутлын тоог авахад алдаа гарлаа:", error);
-    }
-  };
+  const [branchData, setBranchData] = useState([]);
 
   useEffect(() => {
     const fetchBranchData = async () => {
@@ -59,11 +40,6 @@ const BranchScreen = () => {
             ...doc.data(),
           }));
           setBranchData(allBranches);
-
-          // Each branch unsold count
-          allBranches.forEach((branch) =>
-            fetchUnsoldShoeCount(branch.branchName)
-          );
         } else {
           const querySnapshot = await getDocs(
             query(
@@ -74,9 +50,6 @@ const BranchScreen = () => {
           if (!querySnapshot.empty) {
             const branchData = querySnapshot.docs[0].data();
             setBranchData([{ id: querySnapshot.docs[0].id, ...branchData }]);
-
-            // Fetch unsold count for the specific branch
-            fetchUnsoldShoeCount(userData.branch);
           } else {
             console.log("Салбар олдсонгүй.");
           }
@@ -90,7 +63,7 @@ const BranchScreen = () => {
   }, [userData]);
 
   if (loading) {
-    return <Text>Loading...</Text>; // You can replace this with a loader component
+    return <Text>Loading...</Text>;
   }
 
   if (error) {
@@ -105,7 +78,12 @@ const BranchScreen = () => {
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.section}>
         <View style={styles.iconAndTitle}>
-          <Icon name="shop" size={24} color="red" style={styles.icon} />
+          <Icon
+            name="shop"
+            size={width * 0.06}
+            color="red"
+            style={styles.icon}
+          />
           <Text style={styles.sectionTitle}>
             {userData.branch === "БҮХ САЛБАР"
               ? "Бүх салбарууд"
@@ -130,10 +108,10 @@ const BranchScreen = () => {
               ]}
               onPress={() =>
                 navigation.navigate("BranchDetailScreen", {
-                  branchId: branch.id, // Салбарын ID-г дамжуулж байна
+                  branchId: branch.id,
                 })
               }
-              activeOpacity={0.7} // Button дарахад opacity буурч харагдана
+              activeOpacity={0.7}
             >
               <Text style={styles.branchName}>{branch.branchName}</Text>
               <Text style={styles.shoeCount}>{branch.totalShoe}</Text>
@@ -147,52 +125,45 @@ const BranchScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: width * 0.05,
     backgroundColor: "#F5F5F5",
   },
   iconAndTitle: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: height * 0.02,
   },
   section: {
-    marginBottom: 40,
+    marginBottom: height * 0.05,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: width * 0.06,
     fontWeight: "bold",
   },
   buttonContainer: {
     flexDirection: "column",
-    alignItems: "center", // Center the buttons
+    alignItems: "center",
   },
   button: {
-    width: "90%", // Adjust the width for a nice centered look
-    backgroundColor: "#FFEB3B", // Yellow background
-    paddingVertical: 20,
-    borderRadius: 15, // Rounded corners
-    flexDirection: "row", // Layout items in a row
-    justifyContent: "space-between", // Space between title and count
-    alignItems: "center", // Center the content vertically
-    marginVertical: 10,
+    width: "90%",
+    paddingVertical: height * 0.025,
+    borderRadius: width * 0.04,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginVertical: height * 0.015,
   },
   branchName: {
-    fontSize: 22,
+    fontSize: width * 0.045,
     fontWeight: "bold",
-    color: "#ffff", // Black text for the branch name
-    paddingLeft: 20,
+    color: "#FFFFFF",
+    paddingLeft: width * 0.05,
   },
   shoeCount: {
-    fontSize: 32, // Larger text for the shoe count
+    fontSize: width * 0.08,
     fontWeight: "bold",
-    color: "#fff", // Different color for the count (blue)
-    paddingRight: 20,
-  },
-  divider: {
-    height: "100%", // Make the divider span the height of the button
-    width: 2,
-    backgroundColor: "#fff", // White divider line
-    marginHorizontal: 10, // Add space around the divider
+    color: "#FFFFFF",
+    paddingRight: width * 0.05,
   },
 });
 
