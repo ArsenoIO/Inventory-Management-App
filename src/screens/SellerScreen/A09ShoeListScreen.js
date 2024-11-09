@@ -7,8 +7,8 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
-import * as Print from "expo-print"; // expo-print ашиглах
-import * as Sharing from "expo-sharing"; // expo-sharing ашиглах
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 
 const A09ShoeListScreen = () => {
   const [shoes, setShoes] = useState([]);
@@ -18,10 +18,14 @@ const A09ShoeListScreen = () => {
       const db = getFirestore();
       const shoesRef = collection(db, "shoes");
 
-      // A09 кодтой бөгөөд ӨВӨРХАНГАЙ САЛБАР-ын гутлуудыг шүүх
+      // ТӨВ САЛБАР-аас өнөөдөр бүртгэсэн гутлуудыг шүүх
+      const today = new Date();
+      const todayString = today.toISOString().split("T")[0]; // Өнөөдрийн огноог YYYY-MM-DD форматаар авах
+
       const q = query(
         shoesRef,
-        where("addedBranch", "==", "ӨВӨРХАНГАЙ САЛБАР") // Салбарын нэрээр шүүх
+        where("addedBranch", "==", "ТӨВ САЛБАР"),
+        where("addedDate", "==", todayString) // Бүртгэсэн огноо нь өнөөдөртэй таарч байх нөхцөл
       );
 
       try {
@@ -30,10 +34,10 @@ const A09ShoeListScreen = () => {
           id: doc.id,
           ...doc.data(),
         }));
-        setShoes(shoesList); // Гутлын жагсаалтыг state-д хадгалах
+        setShoes(shoesList);
       } catch (error) {
         console.error(
-          "ӨВӨРХАНГАЙ САЛБАР-ын гутлуудыг авчрахад алдаа гарлаа:",
+          "ТӨВ САЛБАР-ын өнөөдөр бүртгэсэн гутлуудыг авчрахад алдаа гарлаа:",
           error
         );
       }
@@ -42,7 +46,6 @@ const A09ShoeListScreen = () => {
     fetchA09Shoes();
   }, []);
 
-  // Гутлуудыг нэрээр нь ангилах функц
   const groupShoesByName = (shoes) => {
     return shoes.reduce((acc, shoe) => {
       if (!acc[shoe.shoeName]) {
@@ -53,14 +56,10 @@ const A09ShoeListScreen = () => {
     }, {});
   };
 
-  // PDF үүсгэх функц
   const generatePDF = async () => {
-    // Гутлуудыг нэрээр нь ангилах
     const groupedShoes = groupShoesByName(shoes);
-
-    // HTML үүсгэх
-    let htmlContent = `<h1>ӨВӨРХАНГАЙ САЛБАР-ын гутлуудын жагсаалт</h1>`;
-    let counter = 1; // Дэс дугаарын тоолуур
+    let htmlContent = `<h1>ТӨВ САЛБАР-ын өнөөдөр бүртгэсэн гутлуудын жагсаалт</h1>`;
+    let counter = 1;
 
     for (const shoeName in groupedShoes) {
       const shoeList = groupedShoes[shoeName];
@@ -74,8 +73,6 @@ const A09ShoeListScreen = () => {
     try {
       const { uri } = await Print.printToFileAsync({ html: htmlContent });
       console.log("PDF файл үүсгэгдлээ:", uri);
-
-      // PDF-ийг хуваалцах
       await Sharing.shareAsync(uri);
     } catch (error) {
       console.error("PDF үүсгэхэд алдаа гарлаа:", error);

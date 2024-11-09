@@ -266,6 +266,23 @@ const SellerStackNavigator = ({ navigation }) => {
             ) : null,
         }}
       />
+      <Stack.Screen
+        name="Print"
+        component={A09ShoeListScreen}
+        options={{
+          title: "Дэлгэрэнгүй",
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <FontAwesome
+                name="arrow-left"
+                size={25}
+                color="black"
+                style={{ marginLeft: 25 }}
+                onPress={() => navigation.goBack()} // Буцах товч
+              />
+            ) : null,
+        }}
+      />
       {/* Other seller screens... */}
     </Stack.Navigator>
   );
