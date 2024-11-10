@@ -55,6 +55,12 @@ const MainScreen = () => {
             bgColor="#88C273"
             iconSource={require("../../assets/Trip.png")}
           />
+          <MainButton
+            title="ХЭВЛЭХ"
+            onPress={() => navigation.navigate("A09ShoeListScreen")}
+            bgColor="#88C273"
+            iconSource={require("../../assets/changeBranch.png")}
+          />
         </View>
       </ScrollView>
     </View>

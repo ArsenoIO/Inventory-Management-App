@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Button } from "react-native";
+import { View, Button, ScrollView, Text } from "react-native";
 import {
   getFirestore,
   collection,
@@ -9,6 +9,7 @@ import {
 } from "firebase/firestore";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import { Timestamp } from "firebase/firestore";
 
 const A09ShoeListScreen = () => {
   const [shoes, setShoes] = useState([]);
@@ -18,26 +19,40 @@ const A09ShoeListScreen = () => {
       const db = getFirestore();
       const shoesRef = collection(db, "shoes");
 
-      // ТӨВ САЛБАР-аас өнөөдөр бүртгэсэн гутлуудыг шүүх
       const today = new Date();
-      const todayString = today.toISOString().split("T")[0]; // Өнөөдрийн огноог YYYY-MM-DD форматаар авах
+      const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+      const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0));
 
       const q = query(
         shoesRef,
         where("addedBranch", "==", "ТӨВ САЛБАР"),
-        where("addedDate", "==", todayString) // Бүртгэсэн огноо нь өнөөдөртэй таарч байх нөхцөл
+        where("addedDate", ">=", Timestamp.fromDate(startOfYesterday)),
+        where("addedDate", "<=", Timestamp.fromDate(endOfToday))
       );
 
       try {
         const querySnapshot = await getDocs(q);
-        const shoesList = querySnapshot.docs.map((doc) => ({
+        let shoesList = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
+
+        // shoeCode утгаар эрэмбэлэх
+        shoesList = shoesList.sort(
+          (a, b) =>
+            parseInt(a.shoeCode.replace(/\D/g, "")) -
+            parseInt(b.shoeCode.replace(/\D/g, ""))
+        );
+
+        console.log("Fetched Shoes List:", shoesList);
         setShoes(shoesList);
       } catch (error) {
         console.error(
-          "ТӨВ САЛБАР-ын өнөөдөр бүртгэсэн гутлуудыг авчрахад алдаа гарлаа:",
+          "ТӨВ САЛБАР-ын өчигдөр болон өнөөдөр бүртгэсэн гутлуудыг авчрахад алдаа гарлаа:",
           error
         );
       }
@@ -46,29 +61,15 @@ const A09ShoeListScreen = () => {
     fetchA09Shoes();
   }, []);
 
-  const groupShoesByName = (shoes) => {
-    return shoes.reduce((acc, shoe) => {
-      if (!acc[shoe.shoeName]) {
-        acc[shoe.shoeName] = [];
-      }
-      acc[shoe.shoeName].push(shoe);
-      return acc;
-    }, {});
-  };
-
-  const generatePDF = async () => {
-    const groupedShoes = groupShoesByName(shoes);
-    let htmlContent = `<h1>ТӨВ САЛБАР-ын өнөөдөр бүртгэсэн гутлуудын жагсаалт</h1>`;
+  const generateCodeSortedPDF = async () => {
+    console.log("Shoes for Code-Sorted PDF:", shoes);
+    let htmlContent = `<h1>Кодын дарааллаар ТӨВ САЛБАР-ын бүртгэсэн гутлууд</h1>`;
     let counter = 1;
 
-    for (const shoeName in groupedShoes) {
-      const shoeList = groupedShoes[shoeName];
-      htmlContent += `<h2>${shoeName}</h2>`;
-      shoeList.forEach((shoe) => {
-        htmlContent += `<p>${counter}. ${shoe.shoeCode} - ${shoe.shoeName} - Размер: ${shoe.shoeSize} - Үнэ: ${shoe.shoePrice}₮</p>`;
-        counter++;
-      });
-    }
+    shoes.forEach((shoe) => {
+      htmlContent += `<p>${counter}. ${shoe.shoeCode} - Размер: ${shoe.shoeSize} - Үнэ: ${shoe.shoePrice}₮</p>`;
+      counter++;
+    });
 
     try {
       const { uri } = await Print.printToFileAsync({ html: htmlContent });
@@ -80,9 +81,24 @@ const A09ShoeListScreen = () => {
   };
 
   return (
-    <View>
-      <Button title="PDF үүсгэх" onPress={generatePDF} />
-    </View>
+    <ScrollView>
+      <View>
+        <Button
+          title="Кодын дарааллаар PDF үүсгэх"
+          onPress={generateCodeSortedPDF}
+        />
+
+        <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 10 }}>
+          Гутлын жагсаалт (Кодын дарааллаар)
+        </Text>
+        {shoes.map((shoe, index) => (
+          <Text key={shoe.id}>
+            {index + 1}. {shoe.shoeCode} - Размер: {shoe.shoeSize} - Үнэ:{" "}
+            {shoe.shoePrice}₮
+          </Text>
+        ))}
+      </View>
+    </ScrollView>
   );
 };
 
