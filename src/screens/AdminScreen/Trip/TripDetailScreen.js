@@ -40,6 +40,7 @@ const TripDetailScreen = ({ route, navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [addBalanceModalVisible, setAddBalanceModalVisible] = useState(false);
   const [imageModalVisible, setImageModalVisible] = useState(false); // For image modal
+  const [paidAmount, setPaidAmount] = useState();
   const [selectedImage, setSelectedImage] = useState(null); // Track selected image
   const [refreshing, setRefreshing] = useState(false);
   const [isConfirmModalVisible, setConfirmModalVisible] = useState(false);
@@ -86,6 +87,11 @@ const TripDetailScreen = ({ route, navigation }) => {
       (acc, expense) => acc + parseFloat(expense.totalCost || 0),
       0
     );
+    const totalPaidAmount = shoeExpenseList.reduce(
+      (acc, expense) => acc + parseFloat(expense.paidAmount || 0),
+      0
+    );
+    setPaidAmount(totalPaidAmount);
     setTotalShoeExpenses(totalShoeCost);
   };
 
@@ -129,7 +135,7 @@ const TripDetailScreen = ({ route, navigation }) => {
 
   const calculateRemainingBalance = () => {
     if (!trip) return 0;
-    return trip.startingBalance - (totalShoeExpenses + totalOtherExpenses);
+    return trip.startingBalance - (paidAmount + totalOtherExpenses);
   };
 
   const handleExpenseSelection = (type) => {
@@ -265,6 +271,7 @@ const TripDetailScreen = ({ route, navigation }) => {
       console.error(error);
     }
   };
+
   const handleCompleteTrip = async () => {
     try {
       const db = getFirestore();
@@ -339,6 +346,13 @@ const TripDetailScreen = ({ route, navigation }) => {
             <Text style={styles.expenseDetail}>
               Үнэ: {expense.shoeExpense} | Нийт үнэ: {expense.totalCost}
             </Text>
+            <Text style={styles.expenseDetailPaid}>
+              Төлөлт: {expense.paidAmount} |{" "}
+              <Text style={styles.expenseDetailBalance}>
+                Тооцоо: {expense.balanceAmount}
+              </Text>
+            </Text>
+
             {expense.image && (
               <TouchableOpacity
                 onPress={() => {
@@ -349,8 +363,6 @@ const TripDetailScreen = ({ route, navigation }) => {
                 <Image source={{ uri: expense.image }} style={styles.image} />
               </TouchableOpacity>
             )}
-
-            <Text style={styles.payment}>{expense.paymentMethod}</Text>
 
             <TouchableOpacity
               onPress={() =>
@@ -558,6 +570,16 @@ const styles = StyleSheet.create({
   expenseDetail: {
     fontSize: width * 0.04,
     marginBottom: height * 0.005,
+  },
+  expenseDetailPaid: {
+    fontSize: width * 0.04,
+    marginBottom: height * 0.005,
+    color: "#117554",
+  },
+  expenseDetailBalance: {
+    fontSize: width * 0.04,
+    marginBottom: height * 0.005,
+    color: "#B8001F",
   },
   payment: {
     color: "#3C552D",

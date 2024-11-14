@@ -29,6 +29,7 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
   const [supplierCode, setSupplierCode] = useState("");
   const [shoeCount, setShoeCount] = useState("");
   const [unitPrice, setUnitPrice] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("paid"); // "paid", "credit", "other"
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
@@ -46,9 +47,14 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
 
   const calculateStorePrice = () => {
     if (unitPrice) {
-      return parseFloat(unitPrice) * 36 + 180000;
+      return parseFloat(unitPrice) * 36 + 180000 + 100000;
     }
     return 0;
+  };
+
+  const calculateBalanceAmount = () => {
+    const totalPrice = calculateTotalPrice();
+    return (parseFloat(paidAmount) || 0) - totalPrice;
   };
 
   const openImagePicker = async () => {
@@ -71,7 +77,7 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
 
     let result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.9,
+      quality: 0.7,
     });
 
     if (!result.canceled) {
@@ -117,6 +123,7 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
 
       const db = getFirestore();
       const totalShoeExpense = calculateTotalPrice();
+      const balanceAmount = calculateBalanceAmount(); // Үлдэгдэл мөнгө
       const newShoeCount = parseInt(shoeCount, 10);
 
       // Зардлыг хадгалах
@@ -133,6 +140,8 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
         createdAt: new Date(),
         type: "shoeExpense",
         registered: false,
+        paidAmount: parseFloat(paidAmount) || 0,
+        balanceAmount: balanceAmount, // Үлдэгдэл тооцоолол хадгалах
       });
 
       // Нийлүүлэгчийн мэдээллийг шинэчлэх
@@ -152,7 +161,7 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
         // Нийлүүлэгчийн баримтыг шинэчлэх
         await updateDoc(supplierRef, {
           totalShoes: updatedTotalShoes,
-          balance: updatedBalance,
+          balance: balanceAmount,
         });
 
         Alert.alert("Амжилттай!", "Гутлын зардал амжилттай нэмэгдлээ.");
@@ -223,28 +232,16 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
         Дэлгүүрт зарагдах үнэ: {calculateStorePrice()}₮
       </Text>
 
-      <Text style={styles.label}>Төлөлтийн төрөл:</Text>
-      <View style={styles.radioContainer}>
-        <RadioButton.Group
-          onValueChange={(newValue) => setPaymentMethod(newValue)}
-          value={paymentMethod}
-        >
-          <View style={styles.radioRow}>
-            <View style={styles.radioItem}>
-              <RadioButton value="paid" />
-              <Text>Төлөгдсөн</Text>
-            </View>
-            <View style={styles.radioItem}>
-              <RadioButton value="credit" />
-              <Text>Зээл</Text>
-            </View>
-            <View style={styles.radioItem}>
-              <RadioButton value="other" />
-              <Text>Бусад</Text>
-            </View>
-          </View>
-        </RadioButton.Group>
-      </View>
+      <Text style={styles.label}>Төлсөн мөнгө:</Text>
+      <TextInput
+        style={styles.input}
+        value={paidAmount}
+        keyboardType="numeric"
+        onChangeText={setPaidAmount}
+      />
+      <Text style={styles.balanceText}>
+        Тооцоо (Үлдэгдэл): {calculateBalanceAmount()}
+      </Text>
 
       {paymentMethod === "other" && (
         <View>

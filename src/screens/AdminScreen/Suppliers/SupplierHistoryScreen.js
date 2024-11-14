@@ -159,26 +159,16 @@ const SupplierHistoryScreen = ({ route }) => {
             </Text>
             <Text style={styles.text}>Нэгж үнэ: {item.shoeExpense}</Text>
             <Text style={styles.text}>Нийт үнэ: {item.totalCost}</Text>
-            <Text style={styles.text}>
-              Төлбөр:
-              <Text style={styles.textPayment}> {item.paymentMethod}</Text>
+            <Text style={styles.text}>Төлөлт: {item.paidAmount}</Text>
+            <Text style={styles.textSus}>Тооцоо: {item.balanceAmount}</Text>
+            <Text style={styles.infoText}>
+              <Text style={styles.label}>Огноо:</Text>{" "}
+              {item.createdAt instanceof Date
+                ? item.createdAt.toLocaleDateString()
+                : new Date(
+                    item.createdAt?.seconds * 1000 || item.createdAt
+                  ).toLocaleDateString()}
             </Text>
-            <Text style={styles.text}>Тэмдэглэл: {item.additionalNotes}</Text>
-            <View style={styles.infoRow}>
-              <TouchableOpacity
-                onPress={() => changePaymentMethod(item.id, item.paymentMethod)}
-              >
-                <Text style={styles.changeText}>Төлсөн болгож өөрчлөх</Text>
-              </TouchableOpacity>
-              <Text style={styles.infoText}>
-                <Text style={styles.label}>Огноо:</Text>{" "}
-                {item.createdAt instanceof Date
-                  ? item.createdAt.toLocaleDateString()
-                  : new Date(
-                      item.createdAt?.seconds * 1000 || item.createdAt
-                    ).toLocaleDateString()}
-              </Text>
-            </View>
           </View>
         )}
       />
@@ -236,6 +226,13 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: height * 0.01,
   },
+  textSus: {
+    fontSize: width * 0.04,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: height * 0.01,
+    color: "#CE5A67",
+  },
   textPayment: {
     color: "#740938",
     fontSize: width * 0.045,
@@ -249,6 +246,7 @@ const styles = StyleSheet.create({
     fontSize: width * 0.04,
     color: "#333",
     marginBottom: height * 0.01,
+    alignSelf: "flex-end",
   },
   changeText: {
     color: "#03A9F4",

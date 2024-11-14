@@ -61,7 +61,7 @@ const SupplierListScreen = ({ navigation }) => {
       <View style={styles.columnRight}>
         <Text style={styles.nameText}>{item.nameDetail}</Text>
         <Text style={styles.detailText}>Гутал: {item.totalShoes}</Text>
-        <Text style={styles.detailText}>Үлдэгдэл: {item.balance}</Text>
+        <Text style={styles.detailText}>Тооцоо: {item.balance}</Text>
       </View>
     </TouchableOpacity>
   );
