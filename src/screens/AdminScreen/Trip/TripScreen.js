@@ -24,7 +24,7 @@ const TripScreen = () => {
   const [trips, setTrips] = useState([]);
   const [startDate, setStartDate] = useState(() => {
     const date = new Date();
-    date.setDate(date.getDate() - 7); // Одоогийн өдрөөс 7 хоног хасах
+    date.setDate(date.getDate() - 7);
     return date;
   });
   const [endDate, setEndDate] = useState(new Date());
@@ -119,6 +119,16 @@ const TripScreen = () => {
                 {new Date(item.tripDate).toLocaleDateString()}
               </Text>
             </Text>
+            <Text
+              style={[
+                styles.statusText,
+                item.status === "active"
+                  ? styles.activeStatus
+                  : styles.inactiveStatus,
+              ]}
+            >
+              {item.status === "active" ? "Төлөв: Идэвхтэй" : "Төлөв: Идэвхгүй"}
+            </Text>
           </TouchableOpacity>
         )}
       />
@@ -164,10 +174,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  tripName: {
-    fontWeight: "bold",
-    color: "#333",
-  },
   dateDetail: {
     fontSize: 20,
     color: "#666",
@@ -176,6 +182,16 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#006A67",
+  },
+  statusText: {
+    marginTop: 8,
+    fontSize: 16,
+  },
+  activeStatus: {
+    color: "#4CAF50",
+  },
+  inactiveStatus: {
+    color: "#FF6347",
   },
   addButton: {
     position: "absolute",

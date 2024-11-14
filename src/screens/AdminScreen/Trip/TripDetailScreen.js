@@ -10,6 +10,7 @@ import {
   Modal,
   Image,
   Dimensions,
+  TextInput,
 } from "react-native";
 import {
   getFirestore,
@@ -22,8 +23,9 @@ import {
   deleteDoc,
   updateDoc,
 } from "firebase/firestore";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
 import AddBalanceModal from "../../../components/Modal/AddBalanceModal";
+import AddExpenseModal from "../../../components/Modal/AddExpenseModal"; // Import the new modal
 
 const { width, height } = Dimensions.get("window");
 
@@ -40,6 +42,9 @@ const TripDetailScreen = ({ route, navigation }) => {
   const [imageModalVisible, setImageModalVisible] = useState(false); // For image modal
   const [selectedImage, setSelectedImage] = useState(null); // Track selected image
   const [refreshing, setRefreshing] = useState(false);
+  const [isConfirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [confirmationCode, setConfirmationCode] = useState("");
+  const [addExpenseModalVisible, setAddExpenseModalVisible] = useState(false);
 
   const fetchTripDetails = async () => {
     const db = getFirestore();
@@ -109,7 +114,7 @@ const TripDetailScreen = ({ route, navigation }) => {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity onPress={() => setModalVisible(true)}>
+        <TouchableOpacity onPress={() => setAddExpenseModalVisible(true)}>
           <AntDesign
             name="pluscircle"
             size={30}
@@ -136,37 +141,22 @@ const TripDetailScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleDeleteTrip = async () => {
-    Alert.alert(
-      "Баталгаажуулалт",
-      "Энэ аяллыг болон холбогдох бүх зардлыг устгахдаа итгэлтэй байна уу?",
-      [
-        {
-          text: "Үгүй",
-          style: "cancel",
-        },
-        {
-          text: "Тийм",
-          onPress: async () => {
-            try {
-              const db = getFirestore();
-              const tripRef = doc(db, "trips", tripId);
-              await deleteDoc(tripRef);
+  const handleDeleteConfirmed = async () => {
+    try {
+      const db = getFirestore();
+      const tripRef = doc(db, "trips", tripId);
+      await deleteDoc(tripRef);
+      Alert.alert("Амжилттай!", "Аялал болон холбогдох зардлууд устгагдлаа.");
+      setConfirmModalVisible(false);
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert("Алдаа", "Аяллыг устгахад алдаа гарлаа.");
+      console.log(error);
+    }
+  };
 
-              Alert.alert(
-                "Амжилттай!",
-                "Аялал болон холбогдох зардлууд устгагдлаа."
-              );
-              navigation.goBack();
-            } catch (error) {
-              Alert.alert("Алдаа", "Аяллыг устгахад алдаа гарлаа.");
-              console.log(error);
-            }
-          },
-        },
-      ],
-      { cancelable: false }
-    );
+  const handleDeleteTrip = () => {
+    setConfirmModalVisible(true);
   };
 
   const handleDeleteSingleExpense = (expenseId, collectionName) => {
@@ -275,6 +265,17 @@ const TripDetailScreen = ({ route, navigation }) => {
       console.error(error);
     }
   };
+  const handleCompleteTrip = async () => {
+    try {
+      const db = getFirestore();
+      const tripRef = doc(db, "trips", tripId);
+      await updateDoc(tripRef, { status: "inactive" });
+      Alert.alert("Амжилттай!", "Аялал амжилттай дууслаа.");
+      fetchTripDetails(); // Trip-ийн мэдээллийг дахин татах
+    } catch (error) {
+      Alert.alert("Алдаа", "Аяллыг дуусгахад алдаа гарлаа.");
+    }
+  };
 
   if (loading) {
     return <Text style={styles.loadingText}>Ачааллаж байна...</Text>;
@@ -288,9 +289,15 @@ const TripDetailScreen = ({ route, navigation }) => {
       }
     >
       <View style={styles.detailSection}>
-        <Text style={styles.date}>
-          {new Date(trip.tripDate).toLocaleString()}
-        </Text>
+        <View style={styles.dateAndRateContainer}>
+          <Text style={styles.exchangeRateLabel}>
+            Ханш:{" "}
+            <Text style={styles.exchangeRateText}>{trip.exchangeRate}</Text>
+          </Text>
+          <Text style={styles.date}>
+            {new Date(trip.tripDate).toLocaleString()}
+          </Text>
+        </View>
         <Text style={styles.balanceLabel}>
           Анхны дүн:{" "}
           <Text style={styles.balanceText}>{trip.startingBalance}</Text>
@@ -375,40 +382,69 @@ const TripDetailScreen = ({ route, navigation }) => {
         ))}
       </View>
 
-      <TouchableOpacity
-        style={styles.completeButton}
-        onPress={handleDeleteTrip}
+      {trip?.status === "active" ? (
+        <TouchableOpacity
+          style={styles.completeButton}
+          onPress={handleCompleteTrip}
+        >
+          <Text style={styles.completeButtonText}>Аяллыг дуусгах</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={styles.completeButton}
+          onPress={handleDeleteTrip}
+        >
+          <Text style={styles.completeButtonText}>Аяллыг устгах</Text>
+        </TouchableOpacity>
+      )}
+      <Modal
+        visible={isConfirmModalVisible}
+        transparent={true}
+        animationType="slide"
       >
-        <Text style={styles.completeButtonText}>Аяллыг устгах</Text>
-      </TouchableOpacity>
-
-      <Modal visible={modalVisible} transparent={true} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Зардлын төрөл сонгох</Text>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => handleExpenseSelection("otherExpense")}
-            >
-              <Text style={styles.modalButtonText}>Бусад зардал</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => handleExpenseSelection("shoeExpense")}
-            >
-              <Text style={styles.modalButtonText}>Гутлын зардал</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton]}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={[styles.modalButtonText, styles.cancelButtonText]}>
-                Буцах
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.modalTitle}>
+              Аяллыг устгахын тулд 1234 кодыг оруулна уу
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="1234 код оруулна уу"
+              keyboardType="numeric"
+              value={confirmationCode}
+              onChangeText={setConfirmationCode}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => {
+                  if (confirmationCode === "1234") {
+                    handleDeleteConfirmed();
+                  } else {
+                    Alert.alert("Алдаа", "Буруу код оруулсан байна.");
+                  }
+                }}
+              >
+                <Text style={styles.modalButtonText}>Баталгаажуулах</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setConfirmModalVisible(false)}
+              >
+                <Text style={[styles.modalButtonText, styles.cancelButtonText]}>
+                  Цуцлах
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
+      {/* Add Expense Modal */}
+      <AddExpenseModal
+        visible={addExpenseModalVisible}
+        onClose={() => setAddExpenseModalVisible(false)}
+        onSelectExpenseType={handleExpenseSelection}
+      />
 
       {/* Full-Screen Image Modal */}
       <Modal
@@ -448,12 +484,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  date: {
-    fontSize: width * 0.03,
-    alignSelf: "flex-end",
+  dateAndRateContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: height * 0.015,
+  },
+  exchangeRateLabel: {
+    fontSize: width * 0.03,
     color: "#555",
   },
+  exchangeRateText: {
+    fontSize: width * 0.035,
+    fontWeight: "bold",
+    color: "#00796b",
+  },
+  date: {
+    fontSize: width * 0.03,
+    color: "#555",
+  },
+
   balanceLabel: {
     fontSize: width * 0.04,
     marginBottom: height * 0.005,
@@ -590,6 +640,55 @@ const styles = StyleSheet.create({
     fontSize: width * 0.035,
     fontWeight: "bold",
     alignSelf: "flex-end",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "#FFF",
+    padding: 20,
+    borderRadius: 10,
+    width: "80%",
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#bbb",
+    padding: 10,
+    width: "100%",
+    marginBottom: 20,
+    borderRadius: 8,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    alignItems: "center",
+    borderRadius: 8,
+    backgroundColor: "#03A9F4",
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: "#FF6347",
+  },
+  modalButtonText: {
+    color: "#FFF",
+    fontWeight: "bold",
+  },
+  cancelButtonText: {
+    color: "#FFF",
   },
 });
 

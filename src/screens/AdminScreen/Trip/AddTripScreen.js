@@ -9,12 +9,14 @@ import {
 } from "react-native";
 import { getFirestore, collection, addDoc } from "firebase/firestore";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { MaterialIcons } from "@expo/vector-icons"; // Importing icon
+import { MaterialIcons } from "@expo/vector-icons";
 
 const AddTripScreen = ({ navigation }) => {
   const [tripDate, setTripDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [startingBalance, setStartingBalance] = useState("");
+  const [status, setStatus] = useState("active"); // Төлөвийг анхдагчаар идэвхтэй болгох
+  const [exchangeRate, setExchangeRate] = useState(""); // Ханшийн state үүсгэх
 
   const remainingBalance = parseFloat(startingBalance) || 0;
   const shoeExpenses = 0;
@@ -30,7 +32,7 @@ const AddTripScreen = ({ navigation }) => {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, tripDate, startingBalance]);
+  }, [navigation, tripDate, startingBalance, status]);
 
   const onDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || tripDate;
@@ -48,11 +50,14 @@ const AddTripScreen = ({ navigation }) => {
       await addDoc(collection(db, "trips"), {
         tripDate: tripDate.getTime(),
         startingBalance: parseFloat(startingBalance),
+        exchangeRate: parseFloat(exchangeRate) || 0, // Ханшийг хадгална
+
         remainingBalance: remainingBalance,
         shoeExpenses: shoeExpenses,
         otherExpenses: otherExpenses,
         purchasedShoesCount: purchasedShoesCount,
         additionalNotes: additionalNotes,
+        status: status, // Төлөвийг хадгална
       });
       Alert.alert("Амжилттай!", "Аялал амжилттай нэмэгдлээ.");
       navigation.goBack();
@@ -63,7 +68,6 @@ const AddTripScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Огноо сонгох */}
       <Text style={styles.label}>Аяллын огноо:</Text>
       <TouchableOpacity
         style={styles.datePicker}
@@ -80,7 +84,6 @@ const AddTripScreen = ({ navigation }) => {
         />
       )}
 
-      {/* Эхлэх дүн оруулах */}
       <Text style={styles.label}>Эхлэх дүн:</Text>
       <TextInput
         style={styles.input}
@@ -90,14 +93,23 @@ const AddTripScreen = ({ navigation }) => {
         placeholder="Эхлэх дүн оруулна уу"
       />
 
-      {/* Автоматаар үүсэх утгуудыг харуулах */}
+      {/* Ханш оруулах */}
+      <Text style={styles.label}>Ханш:</Text>
+      <TextInput
+        style={styles.input}
+        value={exchangeRate}
+        keyboardType="numeric"
+        onChangeText={setExchangeRate}
+        placeholder="Ханш оруулна уу"
+      />
+
       <View style={styles.readOnlyContainer}>
         <Text style={styles.readOnlyLabel}>Автоматаар үүсэх утгууд:</Text>
         <Text style={styles.readOnlyText}>
-          Үлдэгдэл дүн: {remainingBalance}₮
+          Үлдэгдэл дүн: {remainingBalance}
         </Text>
-        <Text style={styles.readOnlyText}>Гутлын зардал: {shoeExpenses}₮</Text>
-        <Text style={styles.readOnlyText}>Бусад зардал: {otherExpenses}₮</Text>
+        <Text style={styles.readOnlyText}>Гутлын зардал: {shoeExpenses}</Text>
+        <Text style={styles.readOnlyText}>Бусад зардал: {otherExpenses}</Text>
         <Text style={styles.readOnlyText}>
           Худалдан авсан гутал: {purchasedShoesCount}
         </Text>

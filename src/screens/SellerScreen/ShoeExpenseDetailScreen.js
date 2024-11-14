@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback } from "react";
-
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  Button,
   TouchableOpacity,
   FlatList,
+  Dimensions,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import {
   getFirestore,
   collection,
@@ -17,41 +17,35 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
-import { useNavigation } from "@react-navigation/native";
-import DateTimePicker from "@react-native-community/datetimepicker"; // Огноо сонгоход ашиглана
-import { MaterialIcons } from "@expo/vector-icons"; // Importing refresh icon
+
+const { width } = Dimensions.get("window");
 
 const TripScreen = () => {
   const [trips, setTrips] = useState([]);
-  const [startDate, setStartDate] = useState(new Date()); // Эхлэх огноо
-  const [endDate, setEndDate] = useState(new Date()); // Дуусах огноо
+  const [startDate, setStartDate] = useState(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 7); // Одоогийн өдрөөс 7 хоног хасах
+    return date;
+  });
+  const [endDate, setEndDate] = useState(new Date());
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const navigation = useNavigation();
-  const adjustedStartDate = new Date(startDate);
 
-  // Firestore-с аяллын өгөгдлийг татах функц
   const fetchTrips = async () => {
     const db = getFirestore();
     const tripsCollection = collection(db, "trips");
-
+    const adjustedStartDate = new Date(startDate);
     adjustedStartDate.setDate(adjustedStartDate.getDate() - 1);
-    const startTimestamp = adjustedStartDate.getTime();
-    const endTimestamp = endDate.getTime();
 
     const tripQuery = query(
       tripsCollection,
-      where("tripDate", ">=", startTimestamp),
-      where("tripDate", "<=", endTimestamp)
+      where("tripDate", ">=", adjustedStartDate.getTime()),
+      where("tripDate", "<=", endDate.getTime())
     );
 
     const tripSnapshot = await getDocs(tripQuery);
-    const tripList = tripSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    setTrips(tripList);
+    setTrips(tripSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
   };
 
   useFocusEffect(
@@ -63,79 +57,69 @@ const TripScreen = () => {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity onPress={fetchTrips}>
-          <MaterialIcons
-            name="refresh"
-            size={24}
-            color="black"
-            style={{ marginRight: 16 }}
-          />
+        <TouchableOpacity onPress={fetchTrips} style={{ marginRight: 16 }}>
+          <MaterialIcons name="refresh" size={24} color="black" />
         </TouchableOpacity>
       ),
     });
-  }, [startDate, endDate]); // Огноо солигдоход fetch хийгдэнэ
-
-  // Огнооны сонголтын функц
-  const onStartDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || startDate;
-    setShowStartPicker(false);
-    setStartDate(currentDate);
-  };
-
-  const onEndDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || endDate;
-    setShowEndPicker(false);
-    setEndDate(currentDate);
-  };
+  }, [navigation, startDate, endDate]);
 
   return (
     <View style={styles.container}>
-      {/* Огнооны сонголт */}
+      {/* Date Picker Section */}
       <View style={styles.datePickers}>
         <TouchableOpacity onPress={() => setShowStartPicker(true)}>
-          <Text>Эхлэх огноо: {adjustedStartDate.toLocaleDateString()}</Text>
+          <Text style={styles.dateText}>
+            Эхлэх: {startDate.toLocaleDateString()}
+          </Text>
         </TouchableOpacity>
         {showStartPicker && (
           <DateTimePicker
             value={startDate}
             mode="date"
             display="default"
-            onChange={onStartDateChange}
+            onChange={(event, date) => {
+              setShowStartPicker(false);
+              if (date) setStartDate(date);
+            }}
           />
         )}
-
         <TouchableOpacity onPress={() => setShowEndPicker(true)}>
-          <Text>Дуусах огноо: {endDate.toLocaleDateString()}</Text>
+          <Text style={styles.dateText}>
+            Дуусах: {endDate.toLocaleDateString()}
+          </Text>
         </TouchableOpacity>
         {showEndPicker && (
           <DateTimePicker
             value={endDate}
             mode="date"
             display="default"
-            onChange={onEndDateChange}
+            onChange={(event, date) => {
+              setShowEndPicker(false);
+              if (date) setEndDate(date);
+            }}
           />
         )}
       </View>
 
-      {/* Аяллын жагсаалт */}
+      {/* Trip List */}
       <FlatList
         data={trips}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.tripItem}>
-            <Text>{item.tripName}</Text>
+          <TouchableOpacity
+            style={styles.tripItem}
+            onPress={() =>
+              navigation.navigate("TripDetail", { tripId: item.id })
+            }
+          >
             <Text style={styles.dateDetail}>
-              Огноо: {new Date(item.tripDate).toLocaleDateString()}
+              Огноо:{" "}
+              <Text style={styles.date}>
+                {new Date(item.tripDate).toLocaleDateString()}
+              </Text>
             </Text>
-            <TouchableOpacity
-              style={styles.detailsButton}
-              onPress={() =>
-                navigation.navigate("TripDetail", { tripId: item.id })
-              }
-            >
-              <Text style={styles.buttonText}>Дэлгэрэнгүй</Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         )}
       />
     </View>
@@ -146,40 +130,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#FFF",
-  },
-  createTripButton: {
-    backgroundColor: "#03A9F4",
-    padding: 12,
-    borderRadius: 5,
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  buttonText: {
-    color: "#FFF",
-    fontWeight: "bold",
+    backgroundColor: "#F5F5F5",
   },
   datePickers: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
+    padding: 10,
+    backgroundColor: "#FFF",
+    borderRadius: 8,
+    elevation: 2,
+  },
+  dateText: {
+    fontSize: width * 0.03,
+    fontWeight: "500",
   },
   tripItem: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
     padding: 16,
-    borderBottomWidth: 1,
-    borderColor: "#ddd",
+    marginVertical: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  tripName: {
+    fontWeight: "bold",
+    color: "#333",
   },
   dateDetail: {
-    fontWeight: "bold",
-    fontSize: 18,
-    alignSelf: "center",
+    fontSize: 20,
+    color: "#666",
   },
-  detailsButton: {
-    backgroundColor: "#4CAF50",
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
-    alignItems: "center",
+  date: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#006A67",
   },
 });
 

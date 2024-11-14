@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  Image,
+  Dimensions,
+} from "react-native";
 import {
   getFirestore,
   doc,
@@ -8,111 +19,203 @@ import {
   query,
   where,
   getDocs,
+  deleteDoc,
+  updateDoc,
 } from "firebase/firestore";
+import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+
+const { width, height } = Dimensions.get("window");
 
 const TripDetailScreen = ({ route, navigation }) => {
   const { tripId } = route.params;
   const [trip, setTrip] = useState(null);
   const [shoeExpenses, setShoeExpenses] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [totalShoeExpenses, setTotalShoeExpenses] = useState(0);
+  const [totalOtherExpenses, setTotalOtherExpenses] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [imageModalVisible, setImageModalVisible] = useState(false); // For image modal
+  const [selectedImage, setSelectedImage] = useState(null); // Track selected image
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchTripDetails = async () => {
+    const db = getFirestore();
+    const tripRef = doc(db, "trips", tripId);
+    const tripSnap = await getDoc(tripRef);
+
+    if (tripSnap.exists()) {
+      setTrip(tripSnap.data());
+      fetchOtherExpenses();
+      fetchShoeExpenses();
+    } else {
+      Alert.alert("Алдаа", "Аяллын дэлгэрэнгүй мэдээлэл олдсонгүй.");
+      navigation.goBack();
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchTripDetails();
+    setRefreshing(false);
+  };
+
+  const fetchShoeExpenses = async () => {
+    const db = getFirestore();
+    const shoeExpenseQuery = query(
+      collection(db, "shoeExpense"),
+      where("tripId", "==", tripId),
+      where("type", "==", "shoeExpense")
+    );
+
+    const shoeExpenseSnapshot = await getDocs(shoeExpenseQuery);
+    const shoeExpenseList = shoeExpenseSnapshot.docs.map((doc) => ({
+      id: doc.id, // Баримтын ID-г оруулах
+      ...doc.data(),
+    }));
+
+    setShoeExpenses(shoeExpenseList);
+    const totalShoeCost = shoeExpenseList.reduce(
+      (acc, expense) => acc + parseFloat(expense.totalCost || 0),
+      0
+    );
+    setTotalShoeExpenses(totalShoeCost);
+  };
+
+  const fetchOtherExpenses = async () => {
+    const db = getFirestore();
+    const expenseQuery = query(
+      collection(db, "otherExpense"),
+      where("tripID", "==", tripId),
+      where("type", "==", "otherExpense")
+    );
+
+    const expenseSnapshot = await getDocs(expenseQuery);
+    const expenseList = expenseSnapshot.docs.map((doc) => ({
+      id: doc.id, // Баримтын ID-г оруулах
+      ...doc.data(),
+    }));
+    setExpenses(expenseList);
+    const totalExpenses = expenseList.reduce(
+      (acc, expense) => acc + expense.amount,
+      0
+    );
+    setTotalOtherExpenses(totalExpenses);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchTripDetails = async () => {
-      const db = getFirestore();
-      const tripRef = doc(db, "trips", tripId);
-      const tripSnap = await getDoc(tripRef);
-
-      if (tripSnap.exists()) {
-        setTrip(tripSnap.data());
-        fetchShoeExpenses();
-      } else {
-        Alert.alert("Алдаа", "Аяллын дэлгэрэнгүй мэдээлэл олдсонгүй.");
-        navigation.goBack();
-      }
-    };
-
-    const fetchShoeExpenses = async () => {
-      const db = getFirestore();
-      const shoeExpenseQuery = query(
-        collection(db, "shoeExpense"),
-        where("tripId", "==", tripId),
-        where("type", "==", "shoeExpense")
-      );
-
-      const shoeExpenseSnapshot = await getDocs(shoeExpenseQuery);
-      const shoeExpenseList = shoeExpenseSnapshot.docs.map((doc) => doc.data());
-
-      setShoeExpenses(shoeExpenseList);
-
-      const totalShoeCost = shoeExpenseList.reduce((acc, expense) => {
-        const cost = parseFloat(expense.totalCost) || 0;
-        return acc + cost;
-      }, 0);
-
-      setTotalShoeExpenses(totalShoeCost);
-      setLoading(false);
-    };
-
     fetchTripDetails();
   }, [tripId, navigation]);
 
   if (loading) {
-    return <Text>Ачааллаж байна...</Text>;
+    return <Text style={styles.loadingText}>Ачааллаж байна...</Text>;
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.expenseSection}>
-        <Text style={styles.subTitle}>Гутлын жагсаалт:</Text>
+        <Text style={styles.sectionTitle}>Гутлын жагсаалт:</Text>
+
         {shoeExpenses.map((expense, index) => (
           <View key={index} style={styles.shoeExpenseCard}>
             <Text style={styles.expenseDetail}>
               Код: {expense.supplierCode} | Тоо: {expense.purchasedShoesCount}
             </Text>
             <Text style={styles.expenseDetail}>
-              Үнэ: {expense.shoeExpense}₮ | Нийт үнэ: {expense.totalCost}₮
+              Үнэ: {expense.shoeExpense} | Нийт үнэ: {expense.totalCost}
             </Text>
             {expense.image && (
-              <Image source={{ uri: expense.image }} style={styles.image} />
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedImage(expense.image);
+                  setImageModalVisible(true);
+                }}
+              >
+                <Image source={{ uri: expense.image }} style={styles.image} />
+              </TouchableOpacity>
             )}
           </View>
         ))}
       </View>
+
+      <Modal
+        visible={imageModalVisible}
+        transparent={true}
+        animationType="fade"
+      >
+        <TouchableOpacity
+          style={styles.imageModalContainer}
+          onPress={() => setImageModalVisible(false)}
+        >
+          <Image
+            source={{ uri: selectedImage }}
+            style={styles.fullScreenImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: width * 0.04,
     flexGrow: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: "#f2f2f2",
   },
-  subTitle: {
-    fontSize: 20,
+  sectionTitle: {
+    fontSize: width * 0.05,
     fontWeight: "bold",
-    marginBottom: 10,
+    color: "#243642",
+    marginVertical: height * 0.02,
+    alignSelf: "flex-start",
   },
-  expenseSection: {
-    marginTop: 20,
+  expenseText: {
+    fontSize: width * 0.04,
+    color: "#333",
+    marginBottom: height * 0.005,
   },
   shoeExpenseCard: {
-    backgroundColor: "#FFF",
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 10,
-    elevation: 1,
+    backgroundColor: "#ffffff",
+    padding: width * 0.04,
+    borderRadius: width * 0.03,
+    marginBottom: height * 0.02,
+    elevation: 2,
+    borderRightWidth: 4,
+    borderRightColor: "#03A9F4",
   },
   expenseDetail: {
-    fontSize: 16,
-    marginBottom: 5,
+    fontSize: width * 0.04,
+    marginBottom: height * 0.005,
   },
   image: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    marginTop: 10,
+    width: width * 0.45,
+    height: width * 0.45,
+    borderRadius: width * 0.02,
+    marginTop: height * 0.01,
+  },
+  fullScreenImage: {
+    width: "100%",
+    height: "100%",
+  },
+  imageModalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    textAlign: "center",
+    marginTop: height * 0.05,
+    fontSize: width * 0.045,
+    fontWeight: "bold",
   },
 });
 

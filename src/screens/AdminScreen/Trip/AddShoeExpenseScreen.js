@@ -54,7 +54,7 @@ const AddShoeExpenseScreen = ({ route, navigation }) => {
   const openImagePicker = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.9,
+      quality: 0.7,
     });
 
     if (!result.canceled) {

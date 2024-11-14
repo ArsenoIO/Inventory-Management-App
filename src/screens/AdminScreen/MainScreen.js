@@ -54,13 +54,6 @@ const AdminMainScreen = () => {
             iconSource={require("../../assets/profile.png")}
             textSize={styles.buttonText.fontSize}
           />
-          <MainButton
-            title="ХУВЬ ЛИЗИНГ"
-            onPress={() => navigation.navigate("AdminLeasingControl")}
-            bgColor="#FF5757"
-            iconSource={require("../../assets/shoeRegistration.png")}
-            textSize={styles.buttonText.fontSize}
-          />
         </View>
       </ScrollView>
     </View>
