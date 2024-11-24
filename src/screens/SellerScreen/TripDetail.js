@@ -10,6 +10,7 @@ import {
   Modal,
   Image,
   Dimensions,
+  TextInput,
 } from "react-native";
 import {
   getFirestore,
@@ -38,6 +39,63 @@ const TripDetailScreen = ({ route, navigation }) => {
   const [imageModalVisible, setImageModalVisible] = useState(false); // For image modal
   const [selectedImage, setSelectedImage] = useState(null); // Track selected image
   const [refreshing, setRefreshing] = useState(false);
+  const [filterBySupplier, setFilterBySupplier] = useState(""); // Нийлүүлэгчийн шүүлт
+  const [sortByDate, setSortByDate] = useState("desc"); // Огноо эрэмбэлэх чиглэл (asc эсвэл desc)
+  const [totalShoesCount, setTotalShoesCount] = useState(0);
+
+  const fetchShoeExpenses = async () => {
+    const db = getFirestore();
+    const shoeExpenseQuery = query(
+      collection(db, "shoeExpense"),
+      where("tripId", "==", tripId),
+      where("type", "==", "shoeExpense")
+    );
+
+    const shoeExpenseSnapshot = await getDocs(shoeExpenseQuery);
+    const shoeExpenseList = shoeExpenseSnapshot.docs.map((doc) => ({
+      id: doc.id, // Баримтын ID-г оруулах
+      ...doc.data(),
+    }));
+
+    setShoeExpenses(shoeExpenseList);
+
+    // Нийт зардал болон нийт гутлын тоог тооцоолох
+    const totalShoeCost = shoeExpenseList.reduce(
+      (acc, expense) => acc + parseFloat(expense.totalCost || 0),
+      0
+    );
+    const totalShoes = shoeExpenseList.reduce(
+      (acc, expense) => acc + parseInt(expense.purchasedShoesCount || 0, 10),
+      0
+    );
+
+    setTotalShoeExpenses(totalShoeCost);
+    setTotalShoesCount(totalShoes); // Нийт гутлын тоог state-д хадгалах
+  };
+
+  const filteredAndSortedExpenses = () => {
+    let filteredExpenses = shoeExpenses;
+
+    // Нийлүүлэгчээр шүүх
+    if (filterBySupplier) {
+      filteredExpenses = filteredExpenses.filter(
+        (expense) =>
+          expense.supplierCode &&
+          expense.supplierCode.includes(filterBySupplier)
+      );
+    }
+
+    // Огноогоор эрэмбэлэх
+    filteredExpenses.sort((a, b) => {
+      if (sortByDate === "asc") {
+        return a.createdAt - b.createdAt; // Хамгийн эртнийг эхэнд
+      } else {
+        return b.createdAt - a.createdAt; // Хамгийн сүүлийг эхэнд
+      }
+    });
+
+    return filteredExpenses;
+  };
 
   const fetchTripDetails = async () => {
     const db = getFirestore();
@@ -58,28 +116,6 @@ const TripDetailScreen = ({ route, navigation }) => {
     setRefreshing(true);
     await fetchTripDetails();
     setRefreshing(false);
-  };
-
-  const fetchShoeExpenses = async () => {
-    const db = getFirestore();
-    const shoeExpenseQuery = query(
-      collection(db, "shoeExpense"),
-      where("tripId", "==", tripId),
-      where("type", "==", "shoeExpense")
-    );
-
-    const shoeExpenseSnapshot = await getDocs(shoeExpenseQuery);
-    const shoeExpenseList = shoeExpenseSnapshot.docs.map((doc) => ({
-      id: doc.id, // Баримтын ID-г оруулах
-      ...doc.data(),
-    }));
-
-    setShoeExpenses(shoeExpenseList);
-    const totalShoeCost = shoeExpenseList.reduce(
-      (acc, expense) => acc + parseFloat(expense.totalCost || 0),
-      0
-    );
-    setTotalShoeExpenses(totalShoeCost);
   };
 
   const fetchOtherExpenses = async () => {
@@ -119,6 +155,61 @@ const TripDetailScreen = ({ route, navigation }) => {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
+      <View style={styles.summarySection}>
+        <Text style={styles.summaryText}>
+          Нийт гутлын тоо: {totalShoesCount}
+        </Text>
+      </View>
+      <View style={styles.filterContainer}>
+        <TextInput
+          style={styles.filterInput}
+          placeholder="Нийлүүлэгчийн нэрээр хайх"
+          value={filterBySupplier}
+          onChangeText={(text) => setFilterBySupplier(text)}
+        />
+        <TouchableOpacity
+          style={styles.sortButton}
+          onPress={() =>
+            setSortByDate((prev) => (prev === "asc" ? "desc" : "asc"))
+          }
+        >
+          <MaterialIcons
+            name={sortByDate === "asc" ? "arrow-upward" : "arrow-downward"}
+            size={24}
+            color="#333"
+          />
+          <Text style={styles.sortButtonText}>
+            {sortByDate === "asc" ? "Эртнийг эхэнд" : "Сүүлийг эхэнд"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {filteredAndSortedExpenses().map((expense, index) => (
+        <View key={index} style={styles.shoeExpenseCard}>
+          <Text style={styles.expenseDetail}>
+            Код: {expense.supplierCode} | Тоо: {expense.purchasedShoesCount}
+          </Text>
+          <Text style={styles.expenseDetail}>
+            Үнэ: {expense.shoeExpense} | Нийт үнэ: {expense.totalCost} |
+          </Text>
+          <Text style={styles.expenseDetail}>
+            Огноо:{" "}
+            {new Date(expense.createdAt.seconds * 1000).toLocaleDateString()}
+          </Text>
+          {expense.image && (
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedImage(expense.image);
+                setImageModalVisible(true);
+              }}
+            >
+              <Image source={{ uri: expense.image }} style={styles.image} />
+            </TouchableOpacity>
+          )}
+        </View>
+      ))}
+
+      {/*
       <View style={styles.expenseSection}>
         <Text style={styles.sectionTitle}>Гутлын жагсаалт:</Text>
 
@@ -143,7 +234,7 @@ const TripDetailScreen = ({ route, navigation }) => {
           </View>
         ))}
       </View>
-
+*/}
       <Modal
         visible={imageModalVisible}
         transparent={true}
@@ -216,6 +307,23 @@ const styles = StyleSheet.create({
     marginTop: height * 0.05,
     fontSize: width * 0.045,
     fontWeight: "bold",
+  },
+  summarySection: {
+    padding: width * 0.04,
+    backgroundColor: "#fff",
+    borderRadius: width * 0.03,
+    marginBottom: height * 0.02,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  summaryText: {
+    fontSize: width * 0.05,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: height * 0.01,
   },
 });
 
